@@ -1,0 +1,8 @@
+{
+  "name": "watttally",
+  "private": true,
+  "type": "module",
+  "engines": {"node": "24.x"},
+  "scripts": {"format": "prettier --write app/web/static/* app/web/templates/**/*.html", "format:check": "prettier --check app/web/static/*"},
+  "devDependencies": {"prettier": "^3.6.2"}
+}

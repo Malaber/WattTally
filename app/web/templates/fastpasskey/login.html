@@ -1,0 +1,68 @@
+{% macro passkey_login(next_url="/", capabilities_url=none) %}
+<section data-passkey-auth data-next-url="{{ next_url }}">
+  <p class="error" data-auth-error hidden></p>
+  <p class="success" data-auth-success hidden></p>
+  <div data-auth-panels>
+    <div
+      data-auth-tab-panel="signin"
+      id="auth-panel-signin"
+      role="tabpanel"
+      aria-labelledby="auth-tab-signin"
+    >
+      <form data-passkey-login>
+        <button type="button" data-passkey-login-button>
+          Sign in with a passkey
+        </button>
+      </form>
+    </div>
+    <div
+      data-auth-tab-panel="signup"
+      id="auth-panel-signup"
+      role="tabpanel"
+      aria-labelledby="auth-tab-signup"
+      hidden
+    >
+      <h2>Create your passkey</h2>
+      <form data-passkey-register>
+        <label
+          >Your name<input
+            name="display_name"
+            autocomplete="name"
+            required /></label
+        ><label
+          >Email<input
+            type="email"
+            name="email"
+            autocomplete="username webauthn"
+            required /></label
+        ><button type="submit" data-passkey-register-button>
+          Create passkey
+        </button>
+      </form>
+    </div>
+  </div>
+  <div role="tablist" aria-label="Account access">
+    <button
+      type="button"
+      class="secondary"
+      data-auth-tab-trigger="signin"
+      id="auth-tab-signin"
+      role="tab"
+      aria-controls="auth-panel-signin"
+      aria-selected="true"
+    >
+      Sign in</button
+    ><button
+      type="button"
+      class="secondary"
+      data-auth-tab-trigger="signup"
+      id="auth-tab-signup"
+      role="tab"
+      aria-controls="auth-panel-signup"
+      aria-selected="false"
+    >
+      Create account
+    </button>
+  </div>
+</section>
+{% endmacro %}
