@@ -19,6 +19,13 @@ jobs:
       - run: pytest -q
       - run: playwright install --with-deps chromium
       - run: python scripts/browser_smoke.py
+      - run: docker build -t watttally:test .
+      - name: Check container startup and migrations
+        run: |
+          docker run --rm -i \
+            -e WATTTALLY_SECRET_KEY=ci-smoke-test-only-not-a-real-secret \
+            -e WATTTALLY_COLLECTOR_ENABLED=false \
+            watttally:test python - < scripts/container_smoke.py
   container:
     needs: test
     runs-on: ubuntu-latest

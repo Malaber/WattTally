@@ -7,7 +7,7 @@ name = "watttally"
 version = "0.1.0"
 description = "Read-only Home Assistant charging records and reimbursement exports"
 requires-python = ">=3.14"
-dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.30,<1", "sqlalchemy>=2.0.36,<3", "aiosqlite>=0.20,<1", "alembic>=1.13,<2", "pydantic-settings>=2.6,<3", "jinja2>=3.1.4,<4", "httpx>=0.27,<1", "websockets>=14,<17", "cryptography>=44", "fastpasskey @ https://github.com/Malaber/python-libs/releases/download/fastpasskey-v0.2.6/fastpasskey-0.2.6-py3-none-any.whl#sha256=b66a362eb0805860692e1d01bc51db16c8a832a684453a8c825bfe9788d0d19e", "itsdangerous>=2.2,<3", "openpyxl>=3.1,<4", "reportlab>=4.2,<5"]
+dependencies = ["fastapi>=0.115,<1", "uvicorn[standard]>=0.30,<1", "sqlalchemy[asyncio]>=2.0.36,<3", "aiosqlite>=0.20,<1", "alembic>=1.13,<2", "pydantic-settings>=2.6,<3", "jinja2>=3.1.4,<4", "httpx>=0.27,<1", "websockets>=14,<17", "cryptography>=44", "fastpasskey @ https://github.com/Malaber/python-libs/releases/download/fastpasskey-v0.2.6/fastpasskey-0.2.6-py3-none-any.whl#sha256=b66a362eb0805860692e1d01bc51db16c8a832a684453a8c825bfe9788d0d19e", "itsdangerous>=2.2,<3", "openpyxl>=3.1,<4", "reportlab>=4.2,<5"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8", "pytest-asyncio>=0.24", "pytest-cov>=5", "ruff>=0.9", "playwright>=1.49", "pypdf>=5"]
