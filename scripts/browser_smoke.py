@@ -141,6 +141,45 @@ asyncio.run(main())
             page.locator("[data-passkey-add-link-button]").click()
             page.locator("#overview").wait_for(timeout=15000)
             assert page.locator("[data-tab=admin]").count() == 0
+            # Native login consent and code exchange share this real passkey browser session.
+            import base64
+            import hashlib
+            from urllib.parse import parse_qs, urlsplit
+
+            verifier = "v" * 43
+            challenge = (
+                base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest())
+                .decode()
+                .rstrip("=")
+            )
+            page.goto(
+                "http://localhost:8765/api/v1/auth/mobile/authorize?state="
+                + "s" * 43
+                + "&code_challenge="
+                + challenge
+            )
+            page.get_by_role("button", name="Connect iOS app").wait_for()
+            csrf = page.locator('meta[name="csrf-token"]').get_attribute("content")
+            approved = page.request.post(
+                "http://localhost:8765/api/mobile/approve", headers={"X-CSRF-Token": csrf}
+            )
+            assert approved.ok, approved.text()
+            callback = urlsplit(approved.json()["callback"])
+            assert callback.scheme == "de.malaber.watttally"
+            code = parse_qs(callback.query)["code"][0]
+            exchanged = page.request.post(
+                "http://localhost:8765/api/v1/auth/mobile/token",
+                data={"code": code, "code_verifier": verifier},
+            )
+            assert exchanged.ok, exchanged.text()
+            native_headers = {"Authorization": "Bearer " + exchanged.json()["access_token"]}
+            assert page.request.get(
+                "http://localhost:8765/api/dashboard", headers=native_headers
+            ).ok
+            assert page.request.post(
+                "http://localhost:8765/api/mobile/logout", headers=native_headers
+            ).ok
+            page.goto("http://localhost:8765/")
             page.locator("#logout").click()
             page.locator("[data-auth-tab-trigger=signup]").click()
             page.locator("[name=display_name]").fill("Public Member")

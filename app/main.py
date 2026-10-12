@@ -39,6 +39,7 @@ from app.models import (
     Vehicle,
     VehicleSource,
 )
+from app.mobile import install_mobile
 from app.reports import freeze_report, pdf_bytes, xlsx_bytes
 
 ROOT = Path(__file__).parent
@@ -173,6 +174,7 @@ def create_app(settings=None):
         key, key.split(".")[-1].replace("_", " ").capitalize()
     )
     install_auth(app, settings, db_factory)
+    install_mobile(app, settings, db_factory, templates)
 
     @app.middleware("http")
     async def protect(request, call_next):
@@ -189,13 +191,15 @@ def create_app(settings=None):
             if path.startswith("/api/admin/") and not user.is_admin:
                 return JSONResponse({"detail": "Administrator required"}, status_code=403)
         if request.method not in {"GET", "HEAD", "OPTIONS"}:
-            if path.startswith("/api/v1/auth/"):
+            if path.startswith("/api/v1/auth/") and path != "/api/v1/auth/mobile/token":
                 if request.headers.get("origin") != settings.app_base_url.rstrip("/"):
                     return JSONResponse({"detail": "Invalid request origin"}, status_code=403)
             expected = request.session.get("csrf", "")
             supplied = request.headers.get("x-csrf-token", "")
-            if not path.startswith("/api/v1/auth/") and (
-                not expected or not hmac.compare_digest(expected, supplied)
+            if (
+                not path.startswith("/api/v1/auth/")
+                and not request.headers.get("authorization", "").startswith("Bearer ")
+                and (not expected or not hmac.compare_digest(expected, supplied))
             ):
                 return JSONResponse(
                     {"detail": "Reload the page before submitting"}, status_code=403

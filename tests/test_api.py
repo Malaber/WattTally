@@ -221,3 +221,94 @@ def test_enrollment_consumed_once_and_expiry(client):
             )
 
     asyncio.run(exercise())
+
+
+def test_mobile_pkce_login_replay_and_logout(client):
+    import base64
+    from urllib.parse import parse_qs, urlsplit
+
+    headers = authorize(client)
+    verifier = "v" * 43
+    challenge = (
+        base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).decode().rstrip("=")
+    )
+    response = client.get(
+        "/api/v1/auth/mobile/authorize", params={"state": "s" * 43, "code_challenge": challenge}
+    )
+    assert response.status_code == 200
+    assert "Connect iOS app" in response.text
+    assert client.post("/api/mobile/approve").status_code == 403
+    result = client.post("/api/mobile/approve", headers=headers)
+    assert result.status_code == 200
+    callback = urlsplit(result.json()["callback"])
+    assert callback.scheme == "de.malaber.watttally" and callback.netloc == "auth"
+    code = parse_qs(callback.query)["code"][0]
+    assert (
+        client.post(
+            "/api/v1/auth/mobile/token", json={"code": code, "code_verifier": "x" * 43}
+        ).status_code
+        == 401
+    )
+    response = client.post(
+        "/api/v1/auth/mobile/token", json={"code": code, "code_verifier": verifier}
+    )
+    assert response.status_code == 200, response.text
+    token = response.json()["access_token"]
+    assert (
+        client.post(
+            "/api/v1/auth/mobile/token", json={"code": code, "code_verifier": verifier}
+        ).status_code
+        == 401
+    )
+    client.cookies.clear()
+    bearer = {"Authorization": "Bearer " + token}
+    assert client.get("/api/dashboard", headers=bearer).status_code == 200
+    assert client.post("/api/mobile/logout", headers=bearer).status_code == 200
+    assert client.get("/api/dashboard", headers=bearer).status_code == 401
+
+
+def test_browser_token_cannot_bypass_csrf_as_bearer(client):
+    authorize(client)
+    assert (
+        client.get("/api/dashboard", headers={"Authorization": "Bearer test-session"}).status_code
+        == 401
+    )
+
+
+def test_mobile_authorization_rejects_unapproved_and_expired_codes(client):
+    from app.models import MobileCode
+
+    async def seed():
+        async with client.app.state.db() as db:
+            user = User(email="pending@example.com", display_name="Pending")
+            db.add(user)
+            await db.flush()
+            import base64
+
+            challenge = (
+                base64.urlsafe_b64encode(hashlib.sha256(("v" * 43).encode()).digest())
+                .decode()
+                .rstrip("=")
+            )
+            for code, expiry in [
+                ("p" * 43, timedelta(minutes=1)),
+                ("e" * 43, timedelta(minutes=-1)),
+            ]:
+                db.add(
+                    MobileCode(
+                        id=hashlib.sha256(code.encode()).hexdigest(),
+                        user_id=user.id,
+                        challenge=challenge,
+                        expires_at=(datetime.now(UTC) + expiry).isoformat(),
+                    )
+                )
+            await db.commit()
+
+    asyncio.run(seed())
+    for code in ["p" * 43, "e" * 43]:
+        assert (
+            client.post(
+                "/api/v1/auth/mobile/token", json={"code": code, "code_verifier": "v" * 43}
+            ).status_code
+            == 401
+        )
