@@ -1,0 +1,65 @@
+name: WattTallyApp
+options:
+  minimumXcodeGenVersion: 2.38.0
+settings:
+  base:
+    SWIFT_VERSION: 5.10
+    DEVELOPMENT_TEAM: VWKG94374J
+targets:
+  WattTally:
+    type: application
+    platform: iOS
+    deploymentTarget: '17.0'
+    sources: [App, Assets.xcassets]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.malaber.watttally
+        PRODUCT_NAME: WattTally
+        MARKETING_VERSION: 0.2.0
+        CURRENT_PROJECT_VERSION: 1
+        TARGETED_DEVICE_FAMILY: '1,2'
+        SUPPORTS_MACCATALYST: NO
+        GENERATE_INFOPLIST_FILE: YES
+        INFOPLIST_KEY_CFBundleDisplayName: WattTally
+        INFOPLIST_KEY_ITSAppUsesNonExemptEncryption: NO
+        INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
+        INFOPLIST_KEY_UILaunchScreen_Generation: YES
+        INFOPLIST_KEY_LSApplicationCategoryType: public.app-category.utilities
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+    info:
+      path: App/Info.plist
+      properties:
+        CFBundleURLTypes:
+          - CFBundleURLName: de.malaber.watttally.auth
+            CFBundleURLSchemes: [de.malaber.watttally]
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+        UISupportedInterfaceOrientations~ipad: [UIInterfaceOrientationPortrait, UIInterfaceOrientationPortraitUpsideDown, UIInterfaceOrientationLandscapeLeft, UIInterfaceOrientationLandscapeRight]
+  WattTallyTests:
+    type: bundle.unit-test
+    platform: iOS
+    deploymentTarget: '17.0'
+    sources: [Tests]
+    dependencies:
+      - target: WattTally
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.malaber.watttally.tests
+        GENERATE_INFOPLIST_FILE: YES
+  WattTallyUITests:
+    type: bundle.ui-testing
+    platform: iOS
+    deploymentTarget: '17.0'
+    sources: [UITests]
+    dependencies:
+      - target: WattTally
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: de.malaber.watttally.uitests
+        GENERATE_INFOPLIST_FILE: YES
+schemes:
+  WattTally:
+    build:
+      targets:
+        WattTally: all
+    test:
+      targets: [WattTallyTests, WattTallyUITests]

@@ -171,3 +171,10 @@ Production/test deployment proposals:
 The initial release publishes no development branch image. To test the initial
 release, override the test role image with `ghcr.io/malaber/watttally:0.1.0` after
 CI publishes it. The separate test deployment still uses its own data and secrets.
+
+## iPhone and iPad
+
+Native SwiftUI app: [iOS build and rollout guide](ios/WattTallyIOS/README.md).
+Bundle ID and SKU: `de.malaber.watttally`. Store name: **WattTally EV Charging**.
+Deploy the mobile-auth backend update before testing phone sign-in; backend 0.1.0
+does not yet provide those endpoints. All app changes use feature branches/PRs.

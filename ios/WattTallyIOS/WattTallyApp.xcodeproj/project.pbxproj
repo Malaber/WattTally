@@ -1,0 +1,549 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		3614FC34B9D6D002DD452B66 /* WattTallyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 13D083962BCAC9ED6411539B /* WattTallyApp.swift */; };
+		36A44DCCABDC06B6ED39D255 /* API.swift in Sources */ = {isa = PBXBuildFile; fileRef = E0DD77999F4461E91DCBE238 /* API.swift */; };
+		5699CFDC270CA1F8F88E7F20 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 735D2DD356F91281F7AE0AF5 /* PrivacyInfo.xcprivacy */; };
+		7B6988E47B9856D8F2EDB4B0 /* Authentication.swift in Sources */ = {isa = PBXBuildFile; fileRef = A361836E09C6F2241C3BA28E /* Authentication.swift */; };
+		836ABE584FED927FA4977D32 /* RootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7B62CA98E77FA772F6853E68 /* RootView.swift */; };
+		BD5481598615F77593CC2DE8 /* AppStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 545162ACD9D40599C99229CA /* AppStore.swift */; };
+		C595607593CF666DF6EFBC2C /* WattTallyUITests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D804188490153FD13F8C8C5D /* WattTallyUITests.swift */; };
+		D4E0D6E8558B1C3D95B5216B /* ContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B41D8548BCA150DEE22E590 /* ContractTests.swift */; };
+		ECF598B384A19959B9545FCD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 4AAC22772C90BB952854DB77 /* Assets.xcassets */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		60C9443F657E6BDC0957BF74 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D2BCE691137A19CC754641E0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 61CF11264B075297F740872E;
+			remoteInfo = WattTally;
+		};
+		F6BC00ED048AB2261CB75AA1 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = D2BCE691137A19CC754641E0 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 61CF11264B075297F740872E;
+			remoteInfo = WattTally;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		13D083962BCAC9ED6411539B /* WattTallyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WattTallyApp.swift; sourceTree = "<group>"; };
+		3848F41D2FDCAA5837524513 /* WattTally.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = WattTally.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		4AAC22772C90BB952854DB77 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		4B41D8548BCA150DEE22E590 /* ContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContractTests.swift; sourceTree = "<group>"; };
+		545162ACD9D40599C99229CA /* AppStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppStore.swift; sourceTree = "<group>"; };
+		735D2DD356F91281F7AE0AF5 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		7B62CA98E77FA772F6853E68 /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		7F1EFB5B2EFAAD56C34DF860 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
+		A361836E09C6F2241C3BA28E /* Authentication.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Authentication.swift; sourceTree = "<group>"; };
+		AEBCC67F8991E713995D0743 /* WattTallyTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WattTallyTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		D804188490153FD13F8C8C5D /* WattTallyUITests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WattTallyUITests.swift; sourceTree = "<group>"; };
+		E0DD77999F4461E91DCBE238 /* API.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = API.swift; sourceTree = "<group>"; };
+		E586F3846937011BFD385294 /* WattTallyUITests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = WattTallyUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		1BA0C49F83CAA9006DD3EA4D /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				3848F41D2FDCAA5837524513 /* WattTally.app */,
+				AEBCC67F8991E713995D0743 /* WattTallyTests.xctest */,
+				E586F3846937011BFD385294 /* WattTallyUITests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		30BFB6ED8252396280190B87 /* UITests */ = {
+			isa = PBXGroup;
+			children = (
+				D804188490153FD13F8C8C5D /* WattTallyUITests.swift */,
+			);
+			path = UITests;
+			sourceTree = "<group>";
+		};
+		392B589A9C6B1517FFF94C7F /* Tests */ = {
+			isa = PBXGroup;
+			children = (
+				4B41D8548BCA150DEE22E590 /* ContractTests.swift */,
+			);
+			path = Tests;
+			sourceTree = "<group>";
+		};
+		9AAA3F88BC5BBED39CFC983D /* App */ = {
+			isa = PBXGroup;
+			children = (
+				E0DD77999F4461E91DCBE238 /* API.swift */,
+				545162ACD9D40599C99229CA /* AppStore.swift */,
+				A361836E09C6F2241C3BA28E /* Authentication.swift */,
+				7F1EFB5B2EFAAD56C34DF860 /* Info.plist */,
+				735D2DD356F91281F7AE0AF5 /* PrivacyInfo.xcprivacy */,
+				7B62CA98E77FA772F6853E68 /* RootView.swift */,
+				13D083962BCAC9ED6411539B /* WattTallyApp.swift */,
+			);
+			path = App;
+			sourceTree = "<group>";
+		};
+		C4A8B2F8BF826FF3E683E566 = {
+			isa = PBXGroup;
+			children = (
+				4AAC22772C90BB952854DB77 /* Assets.xcassets */,
+				9AAA3F88BC5BBED39CFC983D /* App */,
+				392B589A9C6B1517FFF94C7F /* Tests */,
+				30BFB6ED8252396280190B87 /* UITests */,
+				1BA0C49F83CAA9006DD3EA4D /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		51784322DA85388EADBFC0D6 /* WattTallyUITests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D1B59A244EB940D2B2802793 /* Build configuration list for PBXNativeTarget "WattTallyUITests" */;
+			buildPhases = (
+				E8F88F0F8F9673AF67E44DAA /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				68E2367702AA19E8BBE8CB33 /* PBXTargetDependency */,
+			);
+			name = WattTallyUITests;
+			packageProductDependencies = (
+			);
+			productName = WattTallyUITests;
+			productReference = E586F3846937011BFD385294 /* WattTallyUITests.xctest */;
+			productType = "com.apple.product-type.bundle.ui-testing";
+		};
+		61CF11264B075297F740872E /* WattTally */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 9F68FC030CEDC5A0E2790727 /* Build configuration list for PBXNativeTarget "WattTally" */;
+			buildPhases = (
+				AC5E6C8ADB9886B28B3D88BC /* Sources */,
+				43F86DF6A85F0568578F9C26 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = WattTally;
+			packageProductDependencies = (
+			);
+			productName = WattTally;
+			productReference = 3848F41D2FDCAA5837524513 /* WattTally.app */;
+			productType = "com.apple.product-type.application";
+		};
+		A3E157C353AF7C61FD775DE0 /* WattTallyTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 54D328FFD31F790C70180022 /* Build configuration list for PBXNativeTarget "WattTallyTests" */;
+			buildPhases = (
+				9AB1EADF1D6D698EB1128D2F /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				20C7626611C07A318879B42A /* PBXTargetDependency */,
+			);
+			name = WattTallyTests;
+			packageProductDependencies = (
+			);
+			productName = WattTallyTests;
+			productReference = AEBCC67F8991E713995D0743 /* WattTallyTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		D2BCE691137A19CC754641E0 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					51784322DA85388EADBFC0D6 = {
+						DevelopmentTeam = VWKG94374J;
+						TestTargetID = 61CF11264B075297F740872E;
+					};
+					61CF11264B075297F740872E = {
+						DevelopmentTeam = VWKG94374J;
+					};
+					A3E157C353AF7C61FD775DE0 = {
+						DevelopmentTeam = VWKG94374J;
+					};
+				};
+			};
+			buildConfigurationList = F862F574E29B6917B0237E44 /* Build configuration list for PBXProject "WattTallyApp" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = C4A8B2F8BF826FF3E683E566;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 1BA0C49F83CAA9006DD3EA4D /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				61CF11264B075297F740872E /* WattTally */,
+				A3E157C353AF7C61FD775DE0 /* WattTallyTests */,
+				51784322DA85388EADBFC0D6 /* WattTallyUITests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		43F86DF6A85F0568578F9C26 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				ECF598B384A19959B9545FCD /* Assets.xcassets in Resources */,
+				5699CFDC270CA1F8F88E7F20 /* PrivacyInfo.xcprivacy in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		9AB1EADF1D6D698EB1128D2F /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				D4E0D6E8558B1C3D95B5216B /* ContractTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		AC5E6C8ADB9886B28B3D88BC /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				36A44DCCABDC06B6ED39D255 /* API.swift in Sources */,
+				BD5481598615F77593CC2DE8 /* AppStore.swift in Sources */,
+				7B6988E47B9856D8F2EDB4B0 /* Authentication.swift in Sources */,
+				836ABE584FED927FA4977D32 /* RootView.swift in Sources */,
+				3614FC34B9D6D002DD452B66 /* WattTallyApp.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		E8F88F0F8F9673AF67E44DAA /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				C595607593CF666DF6EFBC2C /* WattTallyUITests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		20C7626611C07A318879B42A /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 61CF11264B075297F740872E /* WattTally */;
+			targetProxy = F6BC00ED048AB2261CB75AA1 /* PBXContainerItemProxy */;
+		};
+		68E2367702AA19E8BBE8CB33 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 61CF11264B075297F740872E /* WattTally */;
+			targetProxy = 60C9443F657E6BDC0957BF74 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		049E5C92FE5C4858C0452B29 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = de.malaber.watttally.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = WattTally;
+			};
+			name = Release;
+		};
+		30DC9FD799469AF8B53D4E22 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = de.malaber.watttally.uitests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_TARGET_NAME = WattTally;
+			};
+			name = Debug;
+		};
+		350AC69776D6A9B95D430FFD /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WattTally;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.malaber.watttally;
+				PRODUCT_NAME = WattTally;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		414BA8D900C00DF40EEC1081 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = de.malaber.watttally.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WattTally.app/WattTally";
+			};
+			name = Debug;
+		};
+		74052D49B25CE7ACC7A3A9C2 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				GENERATE_INFOPLIST_FILE = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = de.malaber.watttally.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/WattTally.app/WattTally";
+			};
+			name = Release;
+		};
+		8995E6A43762CCFCCC3B8A1B /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
+				CURRENT_PROJECT_VERSION = 1;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = App/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = WattTally;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+				);
+				MARKETING_VERSION = 0.2.0;
+				PRODUCT_BUNDLE_IDENTIFIER = de.malaber.watttally;
+				PRODUCT_NAME = WattTally;
+				SDKROOT = iphoneos;
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		8F3ECB0CDF54DBA9B4CB8C5A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = VWKG94374J;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.1;
+			};
+			name = Release;
+		};
+		BB9A90F4D8966CD75E6B8B1E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = VWKG94374J;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.1;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		54D328FFD31F790C70180022 /* Build configuration list for PBXNativeTarget "WattTallyTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				414BA8D900C00DF40EEC1081 /* Debug */,
+				74052D49B25CE7ACC7A3A9C2 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9F68FC030CEDC5A0E2790727 /* Build configuration list for PBXNativeTarget "WattTally" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				8995E6A43762CCFCCC3B8A1B /* Debug */,
+				350AC69776D6A9B95D430FFD /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		D1B59A244EB940D2B2802793 /* Build configuration list for PBXNativeTarget "WattTallyUITests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				30DC9FD799469AF8B53D4E22 /* Debug */,
+				049E5C92FE5C4858C0452B29 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		F862F574E29B6917B0237E44 /* Build configuration list for PBXProject "WattTallyApp" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				BB9A90F4D8966CD75E6B8B1E /* Debug */,
+				8F3ECB0CDF54DBA9B4CB8C5A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = D2BCE691137A19CC754641E0 /* Project object */;
+}
