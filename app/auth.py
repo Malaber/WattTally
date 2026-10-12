@@ -144,11 +144,17 @@ class Repository:
 
 
 async def session_user(request, db):
-    token = request.session.get("auth_token")
+    authorization = request.headers.get("authorization", "")
+    bearer = authorization.startswith("Bearer ")
+    token = authorization[7:] if bearer else request.session.get("auth_token")
     if not token:
         return None
     session = await db.get(AuthSession, hashlib.sha256(token.encode()).hexdigest())
-    if not session or instant(session.expires_at) <= datetime.now(UTC):
+    if (
+        not session
+        or session.kind != ("mobile" if bearer else "browser")
+        or instant(session.expires_at) <= datetime.now(UTC)
+    ):
         return None
     user = await db.get(User, session.user_id)
     return user if user and user.is_active else None

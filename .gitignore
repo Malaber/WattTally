@@ -12,3 +12,10 @@ data/
 *.egg-info/
 artifacts/
 node_modules/
+
+DerivedData/
+*.xcuserstate
+xcuserdata/
+*.xcarchive/
+*.ipa
+.build/

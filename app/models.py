@@ -141,10 +141,19 @@ class AuthSession(Base):
     id: Mapped[str] = mapped_column(primary_key=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
     expires_at: Mapped[str]
+    kind: Mapped[str] = mapped_column(default="browser")
 
 
 class EnrollmentLink(Base):
     __tablename__ = "enrollment_links"
     id: Mapped[str] = mapped_column(primary_key=True)
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    expires_at: Mapped[str]
+
+
+class MobileCode(Base):
+    __tablename__ = "mobile_codes"
+    id: Mapped[str] = mapped_column(primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"))
+    challenge: Mapped[str]
     expires_at: Mapped[str]
