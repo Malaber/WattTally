@@ -85,11 +85,11 @@ class VehicleInput(BaseModel):
 class ChargerInput(BaseModel):
     instance_id: str
     name: str = Field(min_length=1, max_length=100)
-    energy_entity: str
-    power_entity: str
+    energy_entity: str = Field(min_length=1)
+    power_entity: str = Field(min_length=1)
     session_energy_entity: str | None = None
-    state_entity: str
-    active_values: list[str] = ["charger_charging"]
+    state_entity: str = Field(min_length=1)
+    active_values: list[str] = Field(default=["charger_charging"], min_length=1)
     default_vehicle_id: str | None = None
 
 
@@ -460,6 +460,43 @@ def create_app(settings=None):
                 raise HTTPException(409, "This energy meter already belongs to a charger")
             charger = Charger(**data.model_dump())
             db.add(charger)
+            await db.commit()
+            return public(charger)
+
+    @app.patch("/api/chargers/{key}")
+    async def edit_charger(key: str, data: ChargerInput):
+        async with collector.lock, db_factory() as db:
+            charger = await require(db, Charger, key)
+            if data.instance_id != charger.instance_id:
+                raise HTTPException(400, "A charger cannot be moved to another home")
+            site = await require(db, Instance, charger.instance_id)
+            if data.default_vehicle_id:
+                await require(db, Vehicle, data.default_vehicle_id)
+            existing = await db.scalar(
+                select(Charger).where(
+                    Charger.instance_id == data.instance_id,
+                    Charger.energy_entity == data.energy_entity,
+                    Charger.id != key,
+                )
+            )
+            if existing:
+                raise HTTPException(409, "This energy meter already belongs to a charger")
+            # Changing cycle boundaries would leave old sessions alongside rebuilt ones.
+            boundary_changed = any(
+                getattr(charger, field) != getattr(data, field)
+                for field in ("energy_entity", "state_entity", "active_values")
+            )
+            if boundary_changed and await db.scalar(
+                select(Session.id).where(Session.charger_id == key).limit(1)
+            ):
+                raise HTTPException(
+                    409,
+                    "This charger has retained sessions. Meter and charging-state changes "
+                    "need a reviewed history migration; other settings can still be edited.",
+                )
+            for field, value in data.model_dump().items():
+                setattr(charger, field, value)
+            site.last_sync = None
             await db.commit()
             return public(charger)
 

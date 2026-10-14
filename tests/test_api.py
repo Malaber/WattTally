@@ -312,3 +312,90 @@ def test_mobile_authorization_rejects_unapproved_and_expired_codes(client):
             ).status_code
             == 401
         )
+
+
+def test_charger_mapping_repair_preserves_history(client):
+    from app.models import Charger, Instance, Reading, Session
+
+    headers = authorize(client)
+
+    async def seed():
+        async with client.app.state.db() as db:
+            db.add(Instance(id="home", name="Home", url="https://ha.invalid", token_cipher="x"))
+            await db.flush()
+            db.add(
+                Charger(
+                    id="charger",
+                    instance_id="home",
+                    name="Wallbox",
+                    energy_entity="sensor.energy",
+                    power_entity="sensor.house",
+                    state_entity="sensor.backup",
+                )
+            )
+            db.add(
+                Reading(
+                    instance_id="home",
+                    entity_id="sensor.backup",
+                    timestamp="2026-10-01T00:00:00+00:00",
+                    state="idle",
+                )
+            )
+            await db.commit()
+
+    asyncio.run(seed())
+    mapping = dict(
+        instance_id="home",
+        name="Wallbox",
+        energy_entity="sensor.energy",
+        power_entity="sensor.power",
+        state_entity="sensor.charging",
+        session_energy_entity="sensor.session_energy",
+        active_values=["charging"],
+    )
+    assert client.patch("/api/chargers/charger", json=mapping).status_code == 403
+    response = client.patch("/api/chargers/charger", json=mapping, headers=headers)
+    assert response.status_code == 200, response.text
+    assert response.json()["id"] == "charger"
+    assert response.json()["state_entity"] == "sensor.charging"
+    for bad in [dict(mapping, state_entity=""), dict(mapping, active_values=[])]:
+        assert client.patch("/api/chargers/charger", json=bad, headers=headers).status_code == 422
+    assert (
+        client.patch(
+            "/api/chargers/charger", json=dict(mapping, instance_id="other"), headers=headers
+        ).status_code
+        == 400
+    )
+
+    async def retain():
+        async with client.app.state.db() as db:
+            assert (await db.get(Instance, "home")).last_sync is None
+            assert (await db.get(Reading, 1)).state == "idle"
+            db.add(
+                Session(
+                    id="cycle",
+                    charger_id="charger",
+                    start="2026-10-01T01:00:00+00:00",
+                    assignment="confirmed",
+                    payload={},
+                )
+            )
+            await db.commit()
+
+    asyncio.run(retain())
+    assert (
+        client.patch(
+            "/api/chargers/charger",
+            json=dict(mapping, state_entity="sensor.other"),
+            headers=headers,
+        ).status_code
+        == 409
+    )
+    assert (
+        client.patch(
+            "/api/chargers/charger",
+            json=dict(mapping, power_entity="sensor.corrected"),
+            headers=headers,
+        ).status_code
+        == 200
+    )

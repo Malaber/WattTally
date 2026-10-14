@@ -175,7 +175,7 @@ function render() {
     state.chargers
       .map(
         (c) =>
-          `<div class="item"><strong>${escape(c.name)}</strong><span class="muted">${escape(c.energy_entity)} · ${escape(c.power_entity)}</span></div>`,
+          `<div class="item"><strong>${escape(c.name)}</strong><span class="muted">${escape(c.energy_entity)} · ${escape(c.power_entity)}</span><small>Charging state: ${escape(c.state_entity)} · active: ${escape(c.active_values.join(", "))}</small><small>Session counter: ${escape(c.session_energy_entity || "Not mapped")}</small><button data-edit-charger="${escape(c.id)}">Edit mapping</button></div>`,
       )
       .join("") ||
     '<p class="empty">Use Discover & map to select a charger.</p>';
@@ -194,7 +194,7 @@ async function load() {
   state = await api("/dashboard");
   render();
 }
-async function discovery(id) {
+async function discovery(id, charger = null) {
   notice("Reading Home Assistant entities…");
   const result = await api(`/instances/${id}/discover`, "POST", {});
   await load();
@@ -202,7 +202,21 @@ async function discovery(id) {
   $("#discovery-title").textContent =
     "Map " + state.instances.find((i) => i.id === id).name;
   $("#grid-form [name=instance_id]").value = id;
+  const chargerForm = $("#charger-form");
+  chargerForm.reset();
+  chargerForm.dataset.chargerId = charger?.id || "";
+  chargerForm.querySelector("h3").textContent = charger
+    ? "Edit charger"
+    : "Add charger";
+  chargerForm.querySelector("button").textContent = charger
+    ? "Save mapping & sync"
+    : "Add charger";
   $("#charger-form [name=instance_id]").value = id;
+  $("#charger-form [name=name]").value = charger?.name || "";
+  $("#charger-form [name=active_values]").value =
+    charger?.active_values.join(", ") || "charger_charging";
+  $("#charger-form [name=default_vehicle_id]").value =
+    charger?.default_vehicle_id || "";
   const powers = result.entities.filter((e) => ["W", "kW"].includes(e.unit));
   const energies = result.entities.filter(
     (e) =>
@@ -221,14 +235,26 @@ async function discovery(id) {
     "Not mapped — solar allocation unknown",
   );
   $("#grid-form [name=grid_inverted]").checked = site.grid_inverted;
-  $("#energy-options").innerHTML = options(labelled(energies));
+  $("#energy-options").innerHTML = options(
+    labelled(energies),
+    charger?.energy_entity,
+    "Choose energy meter",
+  );
   $("#session-energy-options").innerHTML = options(
     labelled(result.entities.filter((e) => ["Wh", "kWh"].includes(e.unit))),
-    "",
+    charger?.session_energy_entity || "",
     "Not available",
   );
-  $("#power-options").innerHTML = options(labelled(powers));
-  $("#state-options").innerHTML = options(entities);
+  $("#power-options").innerHTML = options(
+    labelled(powers),
+    charger?.power_entity,
+    "Choose charging power",
+  );
+  $("#state-options").innerHTML = options(
+    entities,
+    charger?.state_entity,
+    "Choose charging state",
+  );
   notice(
     `Found ${result.vehicles.length} Leapmotor vehicle(s). Select charger and grid sensors below.`,
   );
@@ -264,15 +290,20 @@ if ($("#overview")) {
     });
     notice("Grid mapping saved.");
   });
-  bindForm("#charger-form", async (data) => {
+  bindForm("#charger-form", async (data, form) => {
     data.active_values = data.active_values
       .split(",")
       .map((s) => s.trim())
       .filter(Boolean);
     data.default_vehicle_id ||= null;
     data.session_energy_entity ||= null;
-    await api("/chargers", "POST", data);
-    notice("Charger added. Reading history…");
+    const id = form.dataset.chargerId;
+    await api(
+      id ? `/chargers/${id}` : "/chargers",
+      id ? "PATCH" : "POST",
+      data,
+    );
+    notice("Charger mapping saved. Reading history…");
     await api(`/instances/${data.instance_id}/sync`, "POST", {});
     notice("History sync finished.");
   });
@@ -327,6 +358,12 @@ if ($("#overview")) {
     const b = event.target.closest("button");
     if (!b) return;
     try {
+      if (b.dataset.editCharger) {
+        const charger = state.chargers.find(
+          (c) => c.id === b.dataset.editCharger,
+        );
+        await discovery(charger.instance_id, charger);
+      }
       if (b.dataset.discover) await discovery(b.dataset.discover);
       if (b.dataset.sync) {
         b.disabled = true;

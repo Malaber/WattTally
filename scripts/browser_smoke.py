@@ -123,6 +123,28 @@ asyncio.run(main())
             for tab in ["sessions", "exports", "settings", "account", "overview"]:
                 page.locator(f"[data-tab={tab}]").click()
                 assert page.locator("#" + tab).is_visible()
+            # Mapping edits expose existing values; new chargers require explicit choices.
+            page.route("**/api/instances/demo-home/discover", lambda route: route.fulfill(json={
+                "vehicles": [], "entities": [
+                    {"id": "sensor.demo_energy", "name": "Energy", "unit": "kWh", "state_class": "total_increasing"},
+                    {"id": "sensor.demo_power", "name": "Power", "unit": "W"},
+                    {"id": "sensor.demo_status", "name": "Charging state", "unit": None},
+                ]
+            }))
+            page.route("**/api/instances/demo-home/sync", lambda route: route.fulfill(json={"ok": True}))
+            page.locator("[data-tab=settings]").click()
+            page.get_by_role("button", name="Edit mapping", exact=True).click()
+            page.locator("#charger-form h3").filter(has_text="Edit charger").wait_for()
+            assert page.locator("#state-options").input_value() == "sensor.demo_status"
+            assert page.locator("#power-options").input_value() == "sensor.demo_power"
+            page.locator("#charger-form [name=name]").fill("Corrected wallbox")
+            page.get_by_role("button", name="Save mapping & sync", exact=True).click()
+            page.locator("#charger-list").get_by_text("Corrected wallbox", exact=True).wait_for()
+            page.get_by_role("button", name="Discover & map", exact=True).click()
+            page.locator("#charger-form h3").filter(has_text="Add charger").wait_for()
+            assert page.locator("#power-options").input_value() == ""
+            assert page.locator("#state-options").input_value() == ""
+            page.locator("[data-tab=overview]").click()
             output = root / "artifacts"
             output.mkdir(exist_ok=True)
             page.screenshot(path=str(output / "dashboard-desktop.png"), full_page=True)
@@ -137,6 +159,7 @@ asyncio.run(main())
             invite = page.locator("#invite-url").input_value()
             assert "/enroll#" in invite
             page.locator("#logout").click()
+            page.locator("[data-passkey-login-button]").wait_for()
             page.goto(invite)
             page.locator("[data-passkey-add-link-button]").click()
             page.locator("#overview").wait_for(timeout=15000)
