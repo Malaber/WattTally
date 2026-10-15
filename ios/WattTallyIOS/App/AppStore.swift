@@ -50,7 +50,7 @@ import SwiftUI
     do {
       _ = try await api.data(
         "sessions/" + session.id + "/assignment", method: "PATCH",
-        body: JSONSerialization.data(withJSONObject: ["vehicle_id": car.id]))
+        body: JSONSerialization.data(withJSONObject: ["vehicle_id": car.id, "energy_kwh": session.payload.energyKwh]))
       await refresh()
     } catch { self.error = error.localizedDescription }
   }

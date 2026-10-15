@@ -16,9 +16,12 @@ struct Home: Decodable, Identifiable {
 }
 struct Charge: Decodable, Identifiable {
   let id, start, assignment: String
-  let end, vehicleId: String?
+  let end, vehicleId, reviewedEnergyKwh: String?
   let payload: Energy
-  var needsReview: Bool { !["confirmed", "default"].contains(assignment) }
+  var needsReview: Bool {
+    guard end != nil, (Double(payload.energyKwh) ?? 0) > 0 else { return false }
+    return assignment != "confirmed" || reviewedEnergyKwh.flatMap(Double.init) != Double(payload.energyKwh)
+  }
 }
 struct Energy: Decodable {
   let energyKwh: String
