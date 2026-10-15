@@ -95,6 +95,7 @@ class Session(Base):
     end: Mapped[str | None]
     vehicle_id: Mapped[str | None] = mapped_column(ForeignKey("vehicles.id"))
     assignment: Mapped[str] = mapped_column(default="unassigned")
+    reviewed_energy_kwh: Mapped[str | None]
     payload: Mapped[dict] = mapped_column(JSON)
 
 

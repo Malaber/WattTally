@@ -111,6 +111,7 @@ class TariffInput(BaseModel):
 
 class AssignmentInput(BaseModel):
     vehicle_id: str
+    energy_kwh: Decimal | None = Field(default=None, gt=0, allow_inf_nan=False)
 
 
 class ExportInput(BaseModel):
@@ -536,6 +537,16 @@ def create_app(settings=None):
         async with collector.lock, db_factory() as db:
             session = await require(db, Session, key)
             await require(db, Vehicle, data.vehicle_id)
+            if data.energy_kwh is not None:
+                if not session.end:
+                    raise HTTPException(409, "Wait until charging finishes before confirming.")
+                if data.energy_kwh != Decimal(session.payload["energy_kwh"]):
+                    raise HTTPException(
+                        409, "Energy changed during review. Refresh and confirm the updated total."
+                    )
+                session.reviewed_energy_kwh = str(data.energy_kwh)
+            elif session.vehicle_id != data.vehicle_id:
+                session.reviewed_energy_kwh = None
             session.vehicle_id = data.vehicle_id
             session.assignment = "confirmed"
             await db.commit()

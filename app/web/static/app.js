@@ -77,19 +77,22 @@ function bindForm(id, handler) {
     }
   });
 }
+const chargeReviewed = (s) =>
+  s.assignment === "confirmed" &&
+  s.reviewed_energy_kwh != null &&
+  Number(s.reviewed_energy_kwh) === Number(s.payload.energy_kwh);
 function render() {
+  const charges = state.sessions.filter(
+    (s) => !s.end || Number(s.payload.energy_kwh) > 0,
+  );
   const total = state.sessions.reduce(
     (n, s) => n + Number(s.payload.energy_kwh),
     0,
   );
-  const attention = state.sessions.filter(
-    (s) =>
-      !["confirmed", "default"].includes(s.assignment) ||
-      s.payload.flags.length,
-  );
+  const attention = charges.filter((s) => s.end && !chargeReviewed(s));
   $("#stats").innerHTML = [
     ["Retained charging energy", number(total) + " kWh"],
-    ["Charging cycles", state.sessions.length],
+    ["Charging cycles", charges.length],
     ["Need review", attention.length],
   ]
     .map(
@@ -110,7 +113,7 @@ function render() {
       .slice(0, 5)
       .map(
         (s) =>
-          `<div class="item"><strong>${escape(date(s.start))}</strong><span class="muted">${escape(s.assignment)}${s.payload.flags.length ? " · " + escape(s.payload.flags.join(", ")) : ""}</span></div>`,
+          `<div class="item"><strong>${escape(date(s.start))}</strong><span class="muted">${number(s.payload.energy_kwh)} kWh · Check car and energy, then confirm charge</span></div>`,
       )
       .join("") || '<p class="empty">No charging sessions need review.</p>';
   $("#cars-summary").innerHTML =
@@ -137,22 +140,23 @@ function render() {
   );
   $("#session-rows").innerHTML =
     state.sessions
+      .filter(
+        (s) =>
+          $("#show-zero").checked || !s.end || Number(s.payload.energy_kwh) > 0,
+      )
       .filter((s) => !selected || s.vehicle_id === selected)
       .map((s) => {
         const car = state.vehicles.find((v) => v.id === s.vehicle_id),
           charger = state.chargers.find((c) => c.id === s.charger_id),
           p = s.payload;
-        const issue =
-          s.assignment === "unassigned"
-            ? "Car mapping required"
-            : s.assignment === "suggested"
-              ? "Confirm car match"
-              : p.flags.length
-                ? p.flags.join(", ")
-                : s.end
-                  ? "Complete"
-                  : "In progress";
-        return `<tr><td>${escape(date(s.start))}<small>${escape(date(s.end))}</small></td><td>${escape(charger?.name)}</td><td>${escape(car?.name || "Unassigned")}<small>${escape(s.assignment)}</small></td><td>${number(p.energy_kwh)} kWh</td><td>${number(p.grid_kwh)} / ${number(p.solar_kwh)}<small>${Number(p.unknown_kwh) > 0 ? number(p.unknown_kwh) + " kWh unknown" : ""}</small></td><td>${escape(issue)}</td><td><form data-assignment="${escape(s.id)}"><select name="vehicle_id" required>${options(state.vehicles, s.vehicle_id, "Choose car")}</select><button>Confirm</button></form></td></tr>`;
+        const issue = !s.end
+          ? "Charging now"
+          : Number(p.energy_kwh) <= 0
+            ? "Ignored — no energy"
+            : chargeReviewed(s)
+              ? "Confirmed — on record"
+              : "Check car and kWh";
+        return `<tr><td>${escape(date(s.start))}<small>${escape(date(s.end))}</small></td><td>${escape(charger?.name)}</td><td>${escape(car?.name || "Unassigned")}<small>${chargeReviewed(s) ? "confirmed" : "needs confirmation"}</small></td><td>${number(p.energy_kwh)} kWh</td><td>${number(p.grid_kwh)} / ${number(p.solar_kwh)}<small>${Number(p.unknown_kwh) > 0 ? number(p.unknown_kwh) + (Number(p.unknown_kwh) <= Math.min(0.1, Number(p.energy_kwh) * 0.01) ? " kWh split estimated in export" : " kWh split unknown") : ""}</small></td><td>${escape(issue)}</td><td><form data-assignment="${escape(s.id)}"><input type="hidden" name="energy_kwh" value="${escape(p.energy_kwh)}"><select name="vehicle_id" required>${options(state.vehicles, s.vehicle_id, "Choose car")}</select><button ${!s.end || Number(p.energy_kwh) <= 0 ? "disabled" : ""}>${chargeReviewed(s) ? "Update confirmation" : "Confirm charge"}</button></form></td></tr>`;
       })
       .join("") ||
     '<tr><td colspan="7">No charging sessions yet. Map a charger, then sync its Home Assistant.</td></tr>';
@@ -274,6 +278,7 @@ if ($("#overview")) {
     }),
   );
   $("#session-filter").addEventListener("change", render);
+  $("#show-zero").addEventListener("change", render);
   $("#refresh").addEventListener("click", () =>
     load().catch((e) => notice(e.message, true)),
   );

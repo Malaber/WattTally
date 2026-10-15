@@ -69,11 +69,24 @@ write privileges; use an upstream read-only proxy if enforced restriction is nee
 Charging state transitions define cycles. Interruptions of up to 30 seconds merge
 into the same cycle; a 30-second tail captures delayed final meter updates. Meter
 increases supply energy, with reset/gap flags instead of invented consumption.
-Zero-energy cycles remain visible but are omitted from reports.
+Zero-energy cycles remain stored, are hidden by default (Show zero-energy cycles),
+and never block reports.
 
 Car charging signals overlapping the session produce a suggested assignment.
 This is correlation, not a physical vehicle ID from the wallbox: simultaneous
-charging elsewhere can be ambiguous. A suggestion must be confirmed before export.
+charging elsewhere can be ambiguous. Check the car and displayed kWh, then use
+**Confirm charge** once. This explicitly accepts the energy total despite meter
+history gaps. Reports include only completed, confirmed, positive-energy charges;
+unreviewed charges do not block the rest of the month. If the energy total changes
+after confirmation, review is required again. Earlier car-only confirmations need
+one energy confirmation after upgrading. Existing frozen reports stay unchanged.
+
+Actual-cost reports estimate allocation gaps no greater than both 0.1 kWh and 1%
+of a charge using its known grid/solar energy and cost proportions. The measured
+energy total stays unchanged, and all three export formats disclose the estimate.
+Larger gaps and missing tariffs still prevent actual-cost calculation, with an
+explanation identifying the charge. Employer reports use all confirmed kWh at the
+agreed reimbursement rate and contain no grid/solar allocation or cost details.
 Missing/conflicting candidates remain unassigned and visible as mapping errors.
 A configured default is used only when no candidates exist. Explicit corrections
 survive subsequent imports. Different VINs remain different vehicles, even for two

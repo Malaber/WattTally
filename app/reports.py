@@ -18,7 +18,7 @@ from app.accounting import instant, rate_at
 
 BASE_COLUMNS = ["Session", "Period", "Vehicle", "License plate", "Start", "End", "Energy kWh"]
 EMPLOYER_COLUMNS = ["Rate EUR/kWh", "Amount EUR"]
-ACTUAL_COLUMNS = ["Grid kWh", "Solar kWh", "Grid cost EUR", "Solar cost EUR", "Amount EUR"]
+ACTUAL_COLUMNS = ["Grid kWh", "Solar kWh", "Grid cost EUR", "Solar cost EUR", "Amount EUR", "Notes"]
 BLOCKING_FLAGS = {
     "partial_start",
     "missing_meter_baseline",
@@ -48,14 +48,12 @@ def freeze_report(vehicle, sessions, month, timezone, tariffs):
         if instant(session.start).astimezone(zone).strftime("%Y-%m") != month:
             continue
         p = session.payload
-        if Decimal(p["energy_kwh"]) <= 0 and not BLOCKING_FLAGS.intersection(p["flags"]):
+        energy = Decimal(p["energy_kwh"])
+        if energy <= 0 or not session.end:
             continue
-        if not session.end:
-            raise ValueError("A session in this period is still in progress.")
-        if session.assignment not in {"confirmed", "default"}:
-            raise ValueError("Confirm suggested vehicle assignments before exporting.")
-        if BLOCKING_FLAGS.intersection(p["flags"]):
-            raise ValueError("A session has incomplete meter data. Resolve it before exporting.")
+        reviewed = getattr(session, "reviewed_energy_kwh", None)
+        if session.assignment != "confirmed" or reviewed is None or Decimal(reviewed) != energy:
+            continue
         row = {
             "Session": session.id,
             "Period": month,
@@ -77,20 +75,50 @@ def freeze_report(vehicle, sessions, month, timezone, tariffs):
                 }
             )
         else:
-            if Decimal(p["unknown_kwh"]) > 0 or "missing_tariff" in p["flags"]:
-                raise ValueError("Actual-cost export needs complete grid allocation and tariffs.")
+            unknown = Decimal(p["unknown_kwh"])
+            if "missing_tariff" in p["flags"]:
+                raise ValueError(
+                    "Add a home electricity tariff in Connections & cars covering "
+                    + row["Start"][:10]
+                    + ", then create the report again."
+                )
+            if unknown > min(Decimal("0.1"), energy * Decimal("0.01")):
+                raise ValueError(
+                    "Charge on "
+                    + row["Start"][:10]
+                    + " has "
+                    + fixed(unknown)
+                    + " kWh without grid/solar data. Actual costs cannot be calculated "
+                    "reliably; company reimbursement does not require this split."
+                )
+            known = Decimal(p["grid_kwh"]) + Decimal(p["solar_kwh"])
+            if known <= 0:
+                raise ValueError("No grid/solar allocation available for " + row["Start"][:10])
+            factor = (known + unknown) / known
+            notes = []
+            if BLOCKING_FLAGS.intersection(p["flags"]):
+                notes.append("Energy checked and accepted by user despite meter history gaps.")
+            if unknown > 0:
+                notes.append(
+                    f"Estimated split and cost for {fixed(unknown)} kWh using this charge's known proportions."
+                )
             row.update(
                 {
-                    "Grid kWh": fixed(p["grid_kwh"], "0.000001"),
-                    "Solar kWh": fixed(p["solar_kwh"], "0.000001"),
-                    "Grid cost EUR": fixed(p["grid_cost"], "0.000001"),
-                    "Solar cost EUR": fixed(p["solar_cost"], "0.000001"),
-                    "Amount EUR": fixed(Decimal(p["grid_cost"]) + Decimal(p["solar_cost"]), "0.01"),
+                    "Grid kWh": fixed(Decimal(p["grid_kwh"]) * factor, "0.000001"),
+                    "Solar kWh": fixed(Decimal(p["solar_kwh"]) * factor, "0.000001"),
+                    "Grid cost EUR": fixed(Decimal(p["grid_cost"]) * factor, "0.000001"),
+                    "Solar cost EUR": fixed(Decimal(p["solar_cost"]) * factor, "0.000001"),
+                    "Amount EUR": fixed(
+                        (Decimal(p["grid_cost"]) + Decimal(p["solar_cost"])) * factor, "0.01"
+                    ),
+                    "Notes": " ".join(notes),
                 }
             )
         rows.append(row)
     if not rows:
-        raise ValueError("No completed, non-zero sessions for this vehicle and month.")
+        raise ValueError(
+            "No confirmed charges for this vehicle and month. In Sessions, check the car and kWh, then choose Confirm charge."
+        )
     columns = BASE_COLUMNS + (EMPLOYER_COLUMNS if vehicle.policy == "employer" else ACTUAL_COLUMNS)
     out = io.StringIO(newline="")
     writer = csv.DictWriter(out, fieldnames=columns)
@@ -98,6 +126,7 @@ def freeze_report(vehicle, sessions, month, timezone, tariffs):
     writer.writerows(rows)
     text = out.getvalue()
     snapshot = {
+        "review_rule": "Only completed charges whose car and energy total were confirmed are included.",
         "timezone": timezone,
         "vehicle": vehicle.name,
         "plate": vehicle.plate,
@@ -136,6 +165,8 @@ def xlsx_bytes(report):
     ws.auto_filter.ref = ws.dimensions
     for row in ws.iter_rows(min_row=2, min_col=7):
         for cell in row:
+            if ws.cell(1, cell.column).value == "Notes":
+                continue
             cell.value = float(Decimal(cell.value))
             cell.number_format = "0.000" if "kWh" in ws.cell(1, cell.column).value else "0.00"
     summary = wb.create_sheet("Report")
@@ -227,6 +258,11 @@ def pdf_bytes(report):
                 styles["Normal"],
             )
         )
+
+    if report.policy == "actual":
+        for index, row in enumerate(source, 1):
+            if row.get("Notes"):
+                story.append(Paragraph(escape(f"Charge {index}: {row['Notes']}"), styles["Normal"]))
 
     def footer(canvas, document):
         canvas.setFont("Helvetica", 7)

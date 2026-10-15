@@ -15,6 +15,7 @@ def sample(policy="employer"):
         start="2026-10-01T10:00:00+00:00",
         end="2026-10-01T11:00:00+00:00",
         assignment="confirmed",
+        reviewed_energy_kwh="3",
         payload={
             "energy_kwh": "3",
             "grid_kwh": "1",
@@ -61,15 +62,14 @@ def test_actual_cost_uses_grid_and_solar_rates():
 def test_suggested_assignment_cannot_be_exported():
     v, s, t = sample()
     s.assignment = "suggested"
-    with pytest.raises(ValueError, match="Confirm"):
+    with pytest.raises(ValueError, match="No confirmed"):
         freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])
 
 
-def test_incomplete_meter_cannot_be_exported():
+def test_user_confirmed_meter_gaps_can_be_exported():
     v, s, t = sample()
     s.payload["flags"] = ["meter_reset"]
-    with pytest.raises(ValueError, match="incomplete"):
-        freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])
+    assert freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])[0]["amount_eur"] == "0.90"
 
 
 def test_unknown_solar_allowed_only_for_employer():
@@ -78,7 +78,7 @@ def test_unknown_solar_allowed_only_for_employer():
     s.payload["flags"] = ["missing_grid_or_power"]
     assert freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])[0]["amount_eur"] == "0.90"
     v.policy = "actual"
-    with pytest.raises(ValueError, match="complete grid"):
+    with pytest.raises(ValueError, match="without grid/solar"):
         freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])
 
 
@@ -93,3 +93,53 @@ def test_dst_month_boundary_and_session_rounding():
     s.start = "2026-09-30T22:30:00+00:00"
     s.end = "2026-10-01T00:00:00+00:00"
     assert freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])[0]["session_count"] == 1
+
+
+def test_small_allocation_gap_is_estimated_and_disclosed_in_all_formats():
+    v, s, t = sample("actual")
+    s.payload.update(energy_kwh="3.02", unknown_kwh="0.02", flags=["meter_gap"])
+    s.reviewed_energy_kwh = "3.02"
+    snapshot, csv, digest = freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])
+    assert snapshot["energy_kwh"] == "3.020"
+    assert "Estimated split and cost for 0.020 kWh" in csv
+    r = NS(id="r", policy="actual", month="2026-10", snapshot=snapshot, csv_text=csv, sha256=digest)
+    book = load_workbook(io.BytesIO(xlsx_bytes(r)))
+    assert "Estimated split" in book.active.cell(2, 13).value
+    text = " ".join(page.extract_text() for page in PdfReader(io.BytesIO(pdf_bytes(r))).pages)
+    assert "Estimated split" in text
+
+
+def test_changed_total_requires_new_confirmation():
+    v, s, t = sample()
+    s.payload["energy_kwh"] = "4"
+    with pytest.raises(ValueError, match="No confirmed"):
+        freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])
+
+
+def test_zero_cycles_and_unreviewed_charges_do_not_block_confirmed_records():
+    from copy import deepcopy
+
+    v, s, t = sample()
+    zero = deepcopy(s)
+    zero.payload.update(energy_kwh="0", flags=["missing_meter_baseline"])
+    zero.assignment = "unassigned"
+    pending = deepcopy(s)
+    pending.assignment = "suggested"
+    snapshot, _, _ = freeze_report(v, [zero, pending, s], "2026-10", "Europe/Berlin", [t])
+    assert snapshot["session_count"] == 1
+
+
+def test_missing_tariff_gives_actionable_instruction():
+    v, s, t = sample("actual")
+    s.payload["flags"] = ["missing_tariff"]
+    with pytest.raises(ValueError, match="Add a home electricity tariff"):
+        freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])
+
+
+@pytest.mark.parametrize("energy,unknown", [("100", "0.101"), ("1", "0.02")])
+def test_allocation_tolerance_has_absolute_and_relative_limits(energy, unknown):
+    v, s, t = sample("actual")
+    s.payload.update(energy_kwh=energy, unknown_kwh=unknown)
+    s.reviewed_energy_kwh = energy
+    with pytest.raises(ValueError, match="without grid/solar"):
+        freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])

@@ -99,7 +99,7 @@ async def main():
   db.add_all([site,car]);await db.flush()
   charger=Charger(id='demo-charger',instance_id=site.id,name='Carport TopAC',energy_entity='sensor.demo_energy',power_entity='sensor.demo_power',state_entity='sensor.demo_status')
   db.add(charger);await db.flush()
-  db.add(Session(id='demo-session',charger_id=charger.id,start='2026-10-03T09:12:15+00:00',end='2026-10-03T15:16:13+00:00',vehicle_id=car.id,assignment='suggested',payload={'energy_kwh':'11.313','grid_kwh':'4.313','solar_kwh':'7','unknown_kwh':'0','grid_cost':'1.2939','solar_cost':'0','flags':[]}))
+  db.add(Session(id='demo-session',charger_id=charger.id,start='2026-10-03T09:12:15+00:00',end='2026-10-03T15:16:13+00:00',vehicle_id=car.id,assignment='suggested',payload={'energy_kwh':'11.313','grid_kwh':'4.313','solar_kwh':'7','unknown_kwh':'0','grid_cost':'1.2939','solar_cost':'0','flags':['partial_start']}))
   db.add(Tariff(vehicle_id=car.id,effective_from='2026-01-01T00:00:00+00:00',reimbursement_rate='0.30'))
   await db.commit()
  await e.dispose()
