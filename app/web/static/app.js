@@ -150,13 +150,15 @@ function render() {
           charger = state.chargers.find((c) => c.id === s.charger_id),
           p = s.payload;
         const issue = !s.end
-          ? "Charging now"
+          ? s.assignment === "confirmed"
+            ? "Charging now — car confirmed"
+            : "Charging now — select car"
           : Number(p.energy_kwh) <= 0
             ? "Ignored — no energy"
             : chargeReviewed(s)
               ? "Confirmed — on record"
               : "Check car and kWh";
-        return `<tr><td>${escape(date(s.start))}<small>${escape(date(s.end))}</small></td><td>${escape(charger?.name)}</td><td>${escape(car?.name || "Unassigned")}<small>${chargeReviewed(s) ? "confirmed" : "needs confirmation"}</small></td><td>${number(p.energy_kwh)} kWh</td><td>${number(p.grid_kwh)} / ${number(p.solar_kwh)}<small>${Number(p.unknown_kwh) > 0 ? number(p.unknown_kwh) + (Number(p.unknown_kwh) <= Math.min(0.1, Number(p.energy_kwh) * 0.01) ? " kWh split estimated in export" : " kWh split unknown") : ""}</small></td><td>${escape(issue)}</td><td><form data-assignment="${escape(s.id)}"><input type="hidden" name="energy_kwh" value="${escape(p.energy_kwh)}"><select name="vehicle_id" required>${options(state.vehicles, s.vehicle_id, "Choose car")}</select><button ${!s.end || Number(p.energy_kwh) <= 0 ? "disabled" : ""}>${chargeReviewed(s) ? "Update confirmation" : "Confirm charge"}</button></form></td></tr>`;
+        return `<tr><td>${escape(date(s.start))}<small>${escape(date(s.end))}</small></td><td>${escape(charger?.name)}</td><td>${escape(car?.name || "Unassigned")}<small>${!s.end && s.assignment === "confirmed" ? "car confirmed" : chargeReviewed(s) ? "confirmed" : "needs confirmation"}</small></td><td>${number(p.energy_kwh)} kWh</td><td>${number(p.grid_kwh)} / ${number(p.solar_kwh)}<small>${Number(p.unknown_kwh) > 0 ? number(p.unknown_kwh) + (Number(p.unknown_kwh) <= Math.min(0.1, Number(p.energy_kwh) * 0.01) ? " kWh split estimated in export" : " kWh split unknown") : ""}</small></td><td>${escape(issue)}</td><td><form data-assignment="${escape(s.id)}">${s.end ? `<input type="hidden" name="energy_kwh" value="${escape(p.energy_kwh)}">` : ""}<select name="vehicle_id" required>${options(state.vehicles, s.vehicle_id, "Choose car")}</select><button ${s.end && Number(p.energy_kwh) <= 0 ? "disabled" : ""}>${!s.end ? "Confirm car" : chargeReviewed(s) ? "Update confirmation" : "Confirm charge"}</button></form></td></tr>`;
       })
       .join("") ||
     '<tr><td colspan="7">No charging sessions yet. Map a charger, then sync its Home Assistant.</td></tr>';

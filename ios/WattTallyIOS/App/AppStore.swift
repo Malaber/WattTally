@@ -48,9 +48,11 @@ import SwiftUI
     busy = true
     defer { busy = false }
     do {
+      var confirmation = ["vehicle_id": car.id]
+      if session.end != nil { confirmation["energy_kwh"] = session.payload.energyKwh }
       _ = try await api.data(
         "sessions/" + session.id + "/assignment", method: "PATCH",
-        body: JSONSerialization.data(withJSONObject: ["vehicle_id": car.id, "energy_kwh": session.payload.energyKwh]))
+        body: JSONSerialization.data(withJSONObject: confirmation))
       await refresh()
     } catch { self.error = error.localizedDescription }
   }
