@@ -399,3 +399,64 @@ def test_charger_mapping_repair_preserves_history(client):
         ).status_code
         == 200
     )
+
+
+def test_charge_confirmation_checks_displayed_energy(client):
+    from app.models import Charger, Instance, Session, Vehicle
+
+    headers = authorize(client)
+
+    async def seed():
+        async with client.app.state.db() as db:
+            db.add(Instance(id="home", name="Home", url="https://ha.invalid", token_cipher="x"))
+            db.add(Vehicle(id="car", vin="test", name="Car", plate="TEST"))
+            await db.flush()
+            db.add(
+                Charger(
+                    id="charger",
+                    instance_id="home",
+                    name="Wallbox",
+                    energy_entity="sensor.energy",
+                    power_entity="sensor.power",
+                    state_entity="sensor.state",
+                )
+            )
+            await db.flush()
+            db.add(
+                Session(
+                    id="cycle",
+                    charger_id="charger",
+                    start="2026-10-01T00:00:00+00:00",
+                    end="2026-10-01T01:00:00+00:00",
+                    assignment="suggested",
+                    vehicle_id="car",
+                    payload={"energy_kwh": "20", "flags": ["meter_gap"]},
+                )
+            )
+            await db.commit()
+
+    asyncio.run(seed())
+    url = "/api/sessions/cycle/assignment"
+    assert (
+        client.patch(
+            url, headers=headers, json={"vehicle_id": "car", "energy_kwh": "19"}
+        ).status_code
+        == 409
+    )
+    response = client.patch(url, headers=headers, json={"vehicle_id": "car", "energy_kwh": "20"})
+    assert response.status_code == 200
+    assert response.json()["reviewed_energy_kwh"] == "20"
+    assert response.json()["payload"]["flags"] == ["meter_gap"]
+
+    async def reopen():
+        async with client.app.state.db() as db:
+            (await db.get(Session, "cycle")).end = None
+            await db.commit()
+
+    asyncio.run(reopen())
+    assert (
+        client.patch(
+            url, headers=headers, json={"vehicle_id": "car", "energy_kwh": "20"}
+        ).status_code
+        == 409
+    )

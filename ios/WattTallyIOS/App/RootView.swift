@@ -86,7 +86,7 @@ struct OverviewView: View {
             value: energy(
               store.dashboard.sessions.reduce(0) { $0 + (Double($1.payload.energyKwh) ?? 0) }))
           LabeledContent(
-            "Needs assignment review",
+            "Needs confirmation",
             value: "\(store.dashboard.sessions.filter(\.needsReview).count)")
         }
         Section("Your cars") {
@@ -137,8 +137,8 @@ struct SessionsView: View {
   var body: some View {
     NavigationStack {
       List {
-        Toggle("Needs assignment review", isOn: $onlyReview)
-        ForEach(store.dashboard.sessions.filter { !onlyReview || $0.needsReview }) { charge in
+        Toggle("Needs confirmation", isOn: $onlyReview)
+        ForEach(store.dashboard.sessions.filter { ($0.end == nil || (Double($0.payload.energyKwh) ?? 0) > 0) && (!onlyReview || $0.needsReview) }) { charge in
           NavigationLink {
             SessionDetail(charge: charge)
           } label: {
@@ -154,8 +154,8 @@ struct SessionsView: View {
                 Text(charge.end == nil ? "Charging" : charge.assignment).foregroundStyle(
                   charge.needsReview ? .orange : .secondary)
               }
-              if !charge.payload.flags.isEmpty {
-                Label("Data needs attention", systemImage: "exclamationmark.triangle").font(
+              if charge.needsReview {
+                Label("Check car and kWh", systemImage: "exclamationmark.triangle").font(
                   .caption
                 ).foregroundStyle(.orange)
               }
@@ -194,26 +194,26 @@ struct SessionDetail: View {
         }
       }
       if !current.payload.flags.isEmpty {
-        Section("Data quality") {
+        Section("History notes (accepted when you confirm)") {
           ForEach(current.payload.flags, id: \.self) {
             Text($0.replacingOccurrences(of: "_", with: " "))
           }
         }
       }
-      Section("Review car") {
+      Section("Confirm charge") {
         Picker("Car", selection: $selected) {
           Text("Choose car").tag("")
           ForEach(store.dashboard.vehicles) { Text($0.name + " · " + $0.plate).tag($0.id) }
         }
-        Button("Confirm assignment") { confirm = true }.disabled(selected.isEmpty || store.busy)
-        Text("Confirm which car actually charged. Charging signals alone may be ambiguous.").font(
+        Button("Confirm charge") { confirm = true }.disabled(selected.isEmpty || store.busy || current.end == nil || (Double(current.payload.energyKwh) ?? 0) <= 0)
+        Text("Check that the car and kWh match your charge. Confirmation accepts this energy total even if meter history has gaps.").font(
           .footnote
         ).foregroundStyle(.secondary)
       }
     }.navigationTitle("Charging details").onAppear { selected = current.vehicleId ?? "" }
-      .confirmationDialog("Assign this charging cycle to the selected car?", isPresented: $confirm)
+      .confirmationDialog("Confirm this car and the displayed charged kWh?", isPresented: $confirm)
     {
-      Button("Confirm assignment") {
+      Button("Confirm charge") {
         if let car = store.dashboard.vehicles.first(where: { $0.id == selected }) {
           Task { await store.assign(current, car: car) }
         }
