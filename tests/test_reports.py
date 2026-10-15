@@ -143,3 +143,43 @@ def test_allocation_tolerance_has_absolute_and_relative_limits(energy, unknown):
     s.reviewed_energy_kwh = energy
     with pytest.raises(ValueError, match="without grid/solar"):
         freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])
+
+
+def test_charge_is_counted_only_in_completion_month_in_report_timezone():
+    v, s, t = sample()
+    s.start = "2026-09-30T20:30:00+00:00"
+    s.end = "2026-09-30T22:15:00+00:00"  # October 1 in Berlin.
+    with pytest.raises(ValueError, match="No confirmed"):
+        freeze_report(v, [s], "2026-09", "Europe/Berlin", [t])
+    snapshot, _, _ = freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])
+    assert snapshot["session_count"] == 1
+    assert "completion date" in snapshot["period_rule"]
+    s.end = None
+    with pytest.raises(ValueError, match="No confirmed"):
+        freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])
+
+
+@pytest.mark.parametrize("count", [15, 70])
+def test_company_pdf_across_page_breaks(count):
+    import runpy
+    from pathlib import Path
+
+    example_report = runpy.run_path(
+        str(Path(__file__).resolve().parents[1] / "scripts/generate_example_report.py")
+    )["example_report"]
+
+    report = example_report(count)
+    pages = PdfReader(io.BytesIO(pdf_bytes(report))).pages
+    assert len(pages) >= (2 if count == 15 else 3)
+    text = "\n".join(page.extract_text() for page in pages)
+    assert "Wallbox export" in text
+    assert text.count("DEMO AB 123E") == count + 1  # Each row and report heading.
+    assert text.count("Long Range") == count + 1
+    assert "completion date" in text
+    assert "Round each" not in text and "Whole sessions" not in text
+    assert "solar" not in text.lower() and "disclaimer" not in text.lower()
+    for index, page in enumerate(pages, 1):
+        content = page.extract_text()
+        assert report.sha256 in content
+        assert "License plate" in content
+        assert str(index) in content
