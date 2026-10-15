@@ -13,8 +13,10 @@ def database(url):
         @event.listens_for(engine.sync_engine, "connect")
         def pragmas(connection, _):
             cursor = connection.cursor()
-            cursor.execute("PRAGMA foreign_keys=ON")
             cursor.execute("PRAGMA busy_timeout=10000")
+            # History backfills must not block dashboard/authentication reads.
+            cursor.execute("PRAGMA journal_mode=WAL")
+            cursor.execute("PRAGMA foreign_keys=ON")
             cursor.close()
 
     return engine, async_sessionmaker(engine, expire_on_commit=False)

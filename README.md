@@ -99,7 +99,10 @@ beyond HA's detailed retention cannot be fully recovered. Keep app and HA backup
 Long-term HA aggregate statistics are not used to invent historical session rows.
 Raw readings are currently retained indefinitely; database growth needs monitoring.
 Reconstruction currently reads retained history; very large installations will need
-incremental aggregation. SQLite is the supported initial database.
+incremental aggregation. SQLite is the supported initial database. Write-ahead
+logging (WAL) keeps dashboard reads available during history imports. Keep the
+database on local storage; use SQLite’s backup API for live backups, or stop the
+app before copying its complete data directory (including any WAL files).
 
 ## House-first solar allocation
 
