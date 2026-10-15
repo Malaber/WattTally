@@ -11,7 +11,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4, landscape
-from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 from app.accounting import instant, rate_at
@@ -45,7 +45,7 @@ def freeze_report(vehicle, sessions, month, timezone, tariffs):
     zone = ZoneInfo(timezone)
     rows = []
     for session in sessions:
-        if instant(session.start).astimezone(zone).strftime("%Y-%m") != month:
+        if not session.end or instant(session.end).astimezone(zone).strftime("%Y-%m") != month:
             continue
         p = session.payload
         energy = Decimal(p["energy_kwh"])
@@ -135,8 +135,7 @@ def freeze_report(vehicle, sessions, month, timezone, tariffs):
         "session_count": len(rows),
         "energy_kwh": fixed(sum(Decimal(r["Energy kWh"]) for r in rows)),
         "amount_eur": fixed(sum(Decimal(r["Amount EUR"]) for r in rows), "0.01"),
-        "period_rule": "Whole sessions belong to the month in which charging starts.",
-        "rounding": "Round each session to cents, then sum.",
+        "period_rule": "Charges are allocated to the reporting month according to their completion date.",
     }
     return snapshot, text, hashlib.sha256(text.encode("utf-8")).hexdigest()
 
@@ -190,7 +189,7 @@ def pdf_bytes(report):
         stream, pagesize=landscape(A4), rightMargin=28, leftMargin=28, topMargin=28, bottomMargin=38
     )
     styles = getSampleStyleSheet()
-    title = "Charging reimbursement" if report.policy == "employer" else "Charging costs"
+    title = "Wallbox export" if report.policy == "employer" else "Charging costs"
     story = [
         Paragraph(title, styles["Title"]),
         Paragraph(
@@ -199,7 +198,7 @@ def pdf_bytes(report):
         ),
     ]
     source = list(csv.DictReader(io.StringIO(report.csv_text)))
-    headers = ["#", "Start", "End", "Energy kWh"]
+    headers = ["#", "Vehicle", "License plate", "Start", "End", "Energy kWh"]
     headers += (
         ["EUR/kWh", "Amount EUR"]
         if report.policy == "employer"
@@ -209,6 +208,8 @@ def pdf_bytes(report):
     for i, r in enumerate(source, 1):
         values = [
             str(i),
+            r["Vehicle"],
+            r["License plate"],
             r["Start"].replace("T", " ")[:19],
             r["End"].replace("T", " ")[:19],
             fixed(r["Energy kWh"]),
@@ -219,10 +220,32 @@ def pdf_bytes(report):
             else [fixed(r["Grid kWh"]), fixed(r["Solar kWh"]), r["Amount EUR"]]
         )
         rows.append(values)
-    table = Table(rows, repeatRows=1, hAlign="LEFT")
+    cell_style = ParagraphStyle("TableCell", fontName="Helvetica", fontSize=8, leading=10)
+    header_style = ParagraphStyle(
+        "TableHeader", parent=cell_style, fontName="Helvetica-Bold", textColor=colors.white
+    )
+    rows = [
+        [Paragraph(escape(value), header_style if index == 0 else cell_style) for value in row]
+        for index, row in enumerate(rows)
+    ]
+    summary = Paragraph(
+        f"<b>Total: {report.snapshot['energy_kwh']} kWh · EUR {report.snapshot['amount_eur']}</b><br/>"
+        + escape(report.snapshot["period_rule"])
+        + "<br/>"
+        + escape(f"Time zone: {report.snapshot['timezone']}"),
+        ParagraphStyle("Summary", parent=cell_style, fontSize=10, leading=15),
+    )
+    rows.append([summary] + [""] * (len(headers) - 1))
+    widths = [26, 115, 78, 118, 118, 70]
+    widths += [85, 110] if report.policy == "employer" else [55, 55, 85]
+    # Fixed widths and wrapped cells keep long vehicle names inside the page.
+    table = Table(rows, colWidths=widths, repeatRows=1, hAlign="LEFT")
     table.setStyle(
         TableStyle(
             [
+                ("SPAN", (0, -1), (-1, -1)),
+                ("NOSPLIT", (0, -2), (-1, -1)),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
                 ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#6b4f3b")),
                 ("TEXTCOLOR", (0, 0), (-1, 0), colors.white),
                 ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
@@ -234,23 +257,7 @@ def pdf_bytes(report):
             ]
         )
     )
-    story.extend(
-        [
-            Spacer(1, 14),
-            table,
-            Spacer(1, 18),
-            Paragraph(
-                f"Total: {report.snapshot['energy_kwh']} kWh · EUR {report.snapshot['amount_eur']}",
-                styles["Heading2"],
-            ),
-            Paragraph(
-                escape(
-                    f"Times: {report.snapshot['timezone']}. {report.snapshot['period_rule']} {report.snapshot['rounding']}"
-                ),
-                styles["Normal"],
-            ),
-        ]
-    )
+    story.extend([Spacer(1, 14), table])
     if report.policy == "actual":
         story.append(
             Paragraph(
@@ -266,7 +273,8 @@ def pdf_bytes(report):
 
     def footer(canvas, document):
         canvas.setFont("Helvetica", 7)
-        canvas.drawString(28, 20, f"WattTally · {report.id} · CSV SHA256 {report.sha256}")
+        canvas.drawString(28, 25, f"WattTally · {report.id}")
+        canvas.drawString(28, 15, f"CSV SHA256 {report.sha256}")
         canvas.drawRightString(812, 20, str(document.page))
 
     doc.build(story, onFirstPage=footer, onLaterPages=footer)

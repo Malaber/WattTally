@@ -75,7 +75,8 @@ and never block reports.
 Car charging signals overlapping the session produce a suggested assignment.
 This is correlation, not a physical vehicle ID from the wallbox: simultaneous
 charging elsewhere can be ambiguous. Check the car and displayed kWh, then use
-**Confirm charge** once. This explicitly accepts the energy total despite meter
+**Confirm charge** once. During an active charge, **Confirm car** saves the
+vehicle assignment immediately; final energy is confirmed after charging ends. This explicitly accepts the energy total despite meter
 history gaps. Reports include only completed, confirmed, positive-energy charges;
 unreviewed charges do not block the rest of the month. If the energy total changes
 after confirmation, review is required again. Earlier car-only confirmations need
@@ -142,7 +143,7 @@ Corrections and tariff edits affect new reports, never existing downloads.
 - **Employer:** total energy × agreed reimbursement rate, effective at session
   start. Solar share, grid share and actual household costs are excluded entirely
   from CSV, Excel and PDF. No solar discount is applied.
-- Whole sessions belong to the report month in which charging starts, in the chosen
+- Charges belong to the report month in which charging ends, in the chosen
   report timezone. Cross-month sessions are not split. Rates use decimal arithmetic;
   amounts round per session to cents, then sum. PDFs show kWh to three decimals.
 - Incomplete meter sessions, active cycles and unconfirmed suggestions block export

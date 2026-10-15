@@ -460,3 +460,42 @@ def test_charge_confirmation_checks_displayed_energy(client):
         ).status_code
         == 409
     )
+
+
+def test_active_charge_allows_car_confirmation(client):
+    from app.models import Instance, Charger, Session, Vehicle
+
+    headers = authorize(client)
+
+    async def seed():
+        async with client.app.state.db() as db:
+            db.add(Instance(id="h", name="Home", url="https://ha.invalid", token_cipher="x"))
+            db.add(Vehicle(id="v", vin="VIN", name="Car", plate="DEMO"))
+            await db.flush()
+            db.add(
+                Charger(
+                    id="c",
+                    instance_id="h",
+                    name="Wallbox",
+                    energy_entity="sensor.e",
+                    power_entity="sensor.p",
+                    state_entity="sensor.s",
+                )
+            )
+            await db.flush()
+            db.add(
+                Session(
+                    id="s",
+                    charger_id="c",
+                    start="2026-10-01T00:00:00+00:00",
+                    payload={"energy_kwh": "0", "flags": []},
+                )
+            )
+            await db.commit()
+
+    asyncio.run(seed())
+    result = client.patch("/api/sessions/s/assignment", headers=headers, json={"vehicle_id": "v"})
+    assert result.status_code == 200
+    assert result.json()["assignment"] == "confirmed"
+    assert result.json()["vehicle_id"] == "v"
+    assert result.json()["reviewed_energy_kwh"] is None

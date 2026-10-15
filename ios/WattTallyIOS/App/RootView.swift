@@ -205,15 +205,15 @@ struct SessionDetail: View {
           Text("Choose car").tag("")
           ForEach(store.dashboard.vehicles) { Text($0.name + " · " + $0.plate).tag($0.id) }
         }
-        Button("Confirm charge") { confirm = true }.disabled(selected.isEmpty || store.busy || current.end == nil || (Double(current.payload.energyKwh) ?? 0) <= 0)
+        Button(current.end == nil ? "Confirm car" : "Confirm charge") { confirm = true }.disabled(selected.isEmpty || store.busy || (current.end != nil && (Double(current.payload.energyKwh) ?? 0) <= 0))
         Text("Check that the car and kWh match your charge. Confirmation accepts this energy total even if meter history has gaps.").font(
           .footnote
         ).foregroundStyle(.secondary)
       }
     }.navigationTitle("Charging details").onAppear { selected = current.vehicleId ?? "" }
-      .confirmationDialog("Confirm this car and the displayed charged kWh?", isPresented: $confirm)
+      .confirmationDialog(current.end == nil ? "Confirm the car currently charging?" : "Confirm this car and the displayed charged kWh?", isPresented: $confirm)
     {
-      Button("Confirm charge") {
+      Button(current.end == nil ? "Confirm car" : "Confirm charge") {
         if let car = store.dashboard.vehicles.first(where: { $0.id == selected }) {
           Task { await store.assign(current, car: car) }
         }
