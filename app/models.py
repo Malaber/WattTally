@@ -37,6 +37,10 @@ class Vehicle(Base):
     vin: Mapped[str] = mapped_column(unique=True)
     name: Mapped[str]
     plate: Mapped[str]
+    vehicle_model: Mapped[str] = mapped_column(default="", server_default="")
+    driver_name: Mapped[str] = mapped_column(default="", server_default="")
+    driver_address: Mapped[str] = mapped_column(default="", server_default="")
+    report_vin: Mapped[str] = mapped_column(default="", server_default="")
     provider: Mapped[str] = mapped_column(default="leapmotor")
     policy: Mapped[str] = mapped_column(default="actual")
 

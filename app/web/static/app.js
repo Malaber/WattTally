@@ -173,7 +173,7 @@ function render() {
     state.vehicles
       .map(
         (v) =>
-          `<form class="vehicle-form" data-vehicle="${escape(v.id)}"><label>Name<input name="name" value="${escape(v.name)}" required><small>VIN …${escape(v.vin.slice(-6))}</small></label><label>License plate<input name="plate" value="${escape(v.plate)}" required></label><label>Report policy<select name="policy"><option value="actual" ${v.policy === "actual" ? "selected" : ""}>Actual costs + solar</option><option value="employer" ${v.policy === "employer" ? "selected" : ""}>Company reimbursement</option></select></label><button>Save car</button></form>`,
+          `<form class="vehicle-form" data-vehicle="${escape(v.id)}"><label>Name<input name="name" value="${escape(v.name)}" required><small>VIN …${escape(v.vin.slice(-6))}</small></label><label>License plate<input name="plate" value="${escape(v.plate)}" required></label><label>Report policy<select name="policy"><option value="actual" ${v.policy === "actual" ? "selected" : ""}>Actual costs + solar</option><option value="employer" ${v.policy === "employer" ? "selected" : ""}>Company reimbursement</option></select></label><fieldset><legend>Report details</legend><label>Vehicle model<input name="vehicle_model" maxlength="160" value="${escape(v.vehicle_model)}"></label><label>Driver name<input name="driver_name" maxlength="160" value="${escape(v.driver_name)}"></label><label>Driver address<textarea name="driver_address" maxlength="500" rows="3">${escape(v.driver_address)}</textarea></label><label>VIN for reports<input name="report_vin" maxlength="40" value="${escape(v.report_vin || v.vin)}"></label><small>These details are saved with each new report. Discovery identity stays unchanged.</small></fieldset><button>Save car</button></form>`,
       )
       .join("") ||
     '<p class="empty">Connect Home Assistant to discover Leapmotor vehicles.</p>';
@@ -399,7 +399,7 @@ if ($("#overview")) {
   setInterval(() => {
     if (
       !document.hidden &&
-      !["INPUT", "SELECT"].includes(document.activeElement?.tagName)
+      !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)
     )
       load().catch((e) => notice(e.message, true));
   }, 30000);

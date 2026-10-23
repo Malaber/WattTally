@@ -70,6 +70,11 @@ class MappingInput(BaseModel):
 
 
 class VehicleInput(BaseModel):
+    vehicle_model: str = Field(default="", max_length=160)
+    driver_name: str = Field(default="", max_length=160)
+    driver_address: str = Field(default="", max_length=500)
+    report_vin: str = Field(default="", max_length=40)
+
     name: str = Field(min_length=1, max_length=100)
     plate: str = Field(max_length=30)
     policy: str = "actual"
@@ -439,7 +444,7 @@ def create_app(settings=None):
     async def edit_vehicle(key: str, data: VehicleInput):
         async with db_factory() as db:
             vehicle = await require(db, Vehicle, key)
-            for k, v in data.model_dump().items():
+            for k, v in data.model_dump(exclude_unset=True).items():
                 setattr(vehicle, k, v)
             await db.commit()
             return public(vehicle)

@@ -499,3 +499,45 @@ def test_active_charge_allows_car_confirmation(client):
     assert result.json()["assignment"] == "confirmed"
     assert result.json()["vehicle_id"] == "v"
     assert result.json()["reviewed_energy_kwh"] is None
+
+
+def test_vehicle_report_details_preserve_discovery_identity_and_legacy_edits(client):
+    from app.models import Vehicle
+
+    headers = authorize(client)
+
+    async def seed():
+        async with client.app.state.db() as db:
+            db.add(Vehicle(id="details-car", vin="DISCOVERYVIN", name="Car", plate="DEMO"))
+            await db.commit()
+
+    asyncio.run(seed())
+    details = dict(
+        name="Car",
+        plate="DEMO",
+        policy="employer",
+        vehicle_model="E20",
+        driver_name="Alex Example",
+        driver_address="Example Street 12\n12345 Town",
+        report_vin="REPORTVIN",
+    )
+    result = client.patch("/api/vehicles/details-car", json=details, headers=headers)
+    assert result.status_code == 200, result.text
+    assert (
+        client.patch(
+            "/api/vehicles/details-car",
+            json=dict(name="Renamed", plate="DEMO", policy="employer"),
+            headers=headers,
+        ).status_code
+        == 200
+    )
+    car = next(
+        v for v in client.get("/api/dashboard").json()["vehicles"] if v["id"] == "details-car"
+    )
+    assert car["vin"] == "DISCOVERYVIN"
+    for key in ("vehicle_model", "driver_name", "driver_address", "report_vin"):
+        assert car[key] == details[key]
+    details["driver_address"] = "x" * 501
+    assert (
+        client.patch("/api/vehicles/details-car", json=details, headers=headers).status_code == 422
+    )

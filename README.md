@@ -195,3 +195,17 @@ Native SwiftUI app: [iOS build and rollout guide](ios/WattTallyIOS/README.md).
 Bundle ID and SKU: `de.malaber.watttally`. Store name: **WattTally EV Charging**.
 Deploy the mobile-auth backend update before testing phone sign-in; backend 0.1.0
 does not yet provide those endpoints. All app changes use feature branches/PRs.
+
+## Company report details
+
+In **Settings → Cars → Report details**, enter the vehicle model, driver name,
+postal address, and VIN for each vehicle. The license plate uses the existing
+car field. The report VIN defaults to the discovered VIN; editing it does not
+change Home Assistant's vehicle identity. Blank details remain optional.
+
+New company reports freeze these details in the canonical CSV, covered by its
+SHA256. Excel and portrait A4 PDF exports use that frozen data; changing a car
+profile does not rewrite existing reports. Create a new report to include updated
+details. The PDF presents identification once above the charging table and repeats
+column headers and audit footers across pages. The downloadable example uses
+fictional vehicle and driver details and spans multiple pages.
