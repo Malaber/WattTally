@@ -181,6 +181,7 @@ label {
   margin: 14px 0;
 }
 input,
+textarea,
 select {
   width: 100%;
   font: inherit;
@@ -192,6 +193,7 @@ select {
   background: #fff;
 }
 input:focus,
+textarea:focus,
 select:focus,
 button:focus-visible,
 a:focus-visible {
@@ -397,4 +399,18 @@ footer {
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 1px;
+}
+
+.vehicle-form fieldset {
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 12px;
+  margin: 18px 0;
+}
+.vehicle-form legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+textarea {
+  resize: vertical;
 }

@@ -108,6 +108,16 @@ asyncio.run(main())
 """
             subprocess.run([sys.executable, "-c", seed], env=env, cwd=root, check=True)
             page.reload()
+            page.locator("[data-tab=settings]").click()
+            vehicle_form = page.locator('[data-vehicle="demo-car"]')
+            for field, value in {"vehicle_model": "Example E20", "driver_name": "Alex Example", "driver_address": "Example Street 12\n12345 Town", "report_vin": "REPORTVIN"}.items():
+                vehicle_form.locator(f"[name={field}]").fill(value)
+            with page.expect_response("**/api/vehicles/demo-car") as saved:
+                vehicle_form.get_by_role("button", name="Save car").click()
+            assert saved.value.ok
+            page.reload()
+            page.locator("[data-tab=settings]").click()
+            assert page.locator('[data-vehicle="demo-car"] [name=driver_name]').input_value() == "Alex Example"
             page.locator("[data-tab=sessions]").click()
             page.locator("[data-assignment=demo-session] button").click()
             page.get_by_text("confirmed", exact=True).wait_for()
@@ -123,6 +133,7 @@ asyncio.run(main())
             csv_text = Path(csv_path).read_text()
             assert "NW FS 97E" in csv_text and "3.39" in csv_text
             assert "solar" not in csv_text.lower()
+            assert "Alex Example" in csv_text and "REPORTVIN" in csv_text
             for tab in ["sessions", "exports", "settings", "account", "overview"]:
                 page.locator(f"[data-tab={tab}]").click()
                 assert page.locator("#" + tab).is_visible()
