@@ -274,7 +274,24 @@ def reconstruct(charger, chargers, readings, sources, tariffs, now):
         # A configured default is an explicit user policy, not automatic identification.
         if not candidates and charger.default_vehicle_id:
             vehicle_id, assignment = charger.default_vehicle_id, "default"
+        odometers = {}
+        for source in sources:
+            entity = getattr(source, "odometer_entity", None)
+            reading = by_entity.get(entity, Series([])).at(w.end or now)
+            if reading is None:
+                continue
+            value = number(reading.state)
+            if value is None or value < 0 or reading.unit not in {"km", "mi"}:
+                continue
+            if reading.unit == "mi":
+                value *= Decimal("1.609344")
+            odometers[source.vehicle_id] = {
+                "km": str(value),
+                "timestamp": reading.timestamp,
+                "entity_id": entity,
+            }
         payload = {
+            "odometers": odometers,
             "energy_kwh": str(total),
             "grid_kwh": str(grid.quantize(Decimal("0.000000001"))),
             "solar_kwh": str(solar.quantize(Decimal("0.000000001"))),

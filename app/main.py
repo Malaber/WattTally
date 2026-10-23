@@ -425,10 +425,13 @@ def create_app(settings=None):
                                 instance_id=key,
                                 vehicle_id=vehicle.id,
                                 charging_entity=found["charging_entity"],
+                                odometer_entity=found.get("odometer_entity"),
                             )
                         )
                     else:
                         source.charging_entity = found["charging_entity"]
+                        if found.get("odometer_entity"):
+                            source.odometer_entity = found["odometer_entity"]
                 found["id"] = vehicle.id
             await db.commit()
             return result

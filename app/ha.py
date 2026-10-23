@@ -100,9 +100,23 @@ class LeapmotorAdapter:
                     "provider": self.provider,
                     "name": a.get("car_type", "Leapmotor"),
                     "charging_entity": None,
+                    "odometer_entity": None,
                 },
             )
             entity = s["entity_id"]
+            label = (entity + " " + a.get("friendly_name", "")).lower()
+            if a.get("unit_of_measurement") in {"km", "mi"} and any(
+                word in label
+                for word in (
+                    "odometer",
+                    "kilometerstand",
+                    "total_mileage",
+                    "total mileage",
+                    "gesamtfahrstrecke",
+                    "gesamtkilometer",
+                )
+            ):
+                item["odometer_entity"] = entity
             if entity.endswith("_evcc_ladestatus"):
                 item["charging_entity"] = entity
                 item["name"] = a.get("friendly_name", item["name"]).replace(" EVCC Ladestatus", "")

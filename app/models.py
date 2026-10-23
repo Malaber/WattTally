@@ -52,6 +52,7 @@ class VehicleSource(Base):
     instance_id: Mapped[str] = mapped_column(ForeignKey("instances.id"))
     vehicle_id: Mapped[str] = mapped_column(ForeignKey("vehicles.id"))
     charging_entity: Mapped[str]
+    odometer_entity: Mapped[str | None] = mapped_column(default=None)
     charging_values: Mapped[list] = mapped_column(JSON, default=lambda: ["on", "C", "charging"])
 
 

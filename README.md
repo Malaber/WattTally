@@ -209,3 +209,19 @@ profile does not rewrite existing reports. Create a new report to include update
 details. The PDF presents identification once above the charging table and repeats
 column headers and audit footers across pages. The downloadable example uses
 fictional vehicle and driver details and spans multiple pages.
+
+## Odometer readings
+
+Leapmotor discovery recognizes VIN-linked odometer sensors in km or miles (not
+remaining range). The collector retains their Home Assistant history alongside
+charger data. Each session uses the last available reading at or before charge
+end, or the current collection time while charging. Miles are converted to km.
+Unavailable, negative, nonnumeric or missing readings leave mileage blank; new
+readings are never applied backwards to older charges. Changing the assigned car
+selects that vehicle's retained reading. Missing mileage does not block export.
+
+The session table and new CSV, Excel and PDF exports include odometer km. New
+exports format local dates as `22.10.26 23:12`. Existing frozen CSV data stays
+unchanged; legacy PDF dates are formatted when rendered. Migration 0007 adds the
+optional odometer entity mapping. Discovery updates existing cars on the next
+sync; older mileage is available only where Home Assistant history exists.

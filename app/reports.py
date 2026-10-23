@@ -60,9 +60,12 @@ def freeze_report(vehicle, sessions, month, timezone, tariffs):
             "Period": month,
             "Vehicle": safe_text(vehicle.name),
             "License plate": safe_text(vehicle.plate),
-            "Start": instant(session.start).astimezone(zone).isoformat(timespec="seconds"),
-            "End": instant(session.end).astimezone(zone).isoformat(timespec="seconds"),
+            "Start": instant(session.start).astimezone(zone).strftime("%d.%m.%y %H:%M"),
+            "End": instant(session.end).astimezone(zone).strftime("%d.%m.%y %H:%M"),
             "Energy kWh": p["energy_kwh"],
+            "Odometer km": p.get("odometers", {})
+            .get(getattr(session, "vehicle_id", None), {})
+            .get("km", ""),
         }
         if vehicle.policy == "employer":
             row.update(
@@ -130,8 +133,10 @@ def freeze_report(vehicle, sessions, month, timezone, tariffs):
         raise ValueError(
             "No confirmed charges for this vehicle and month. In Sessions, check the car and kWh, then choose Confirm charge."
         )
-    columns = BASE_COLUMNS + (
-        EMPLOYER_COLUMNS + DETAIL_COLUMNS if vehicle.policy == "employer" else ACTUAL_COLUMNS
+    columns = (
+        BASE_COLUMNS
+        + (EMPLOYER_COLUMNS + DETAIL_COLUMNS if vehicle.policy == "employer" else ACTUAL_COLUMNS)
+        + ["Odometer km"]
     )
     out = io.StringIO(newline="")
     writer = csv.DictWriter(out, fieldnames=columns)
@@ -179,9 +184,12 @@ def xlsx_bytes(report):
         for cell in row:
             if ws.cell(1, cell.column).value not in {
                 "Energy kWh",
+                "Odometer km",
                 *EMPLOYER_COLUMNS,
                 *ACTUAL_COLUMNS[:-1],
             }:
+                continue
+            if cell.value in (None, ""):
                 continue
             cell.value = float(Decimal(cell.value))
             cell.number_format = "0.000" if "kWh" in ws.cell(1, cell.column).value else "0.00"
@@ -198,6 +206,15 @@ def xlsx_bytes(report):
     stream = io.BytesIO()
     wb.save(stream)
     return stream.getvalue()
+
+
+def display_date(value):
+    # Older canonical exports store ISO timestamps, including their local offset.
+    if "T" in value:
+        from datetime import datetime
+
+        return datetime.fromisoformat(value).strftime("%d.%m.%y %H:%M")
+    return value
 
 
 def pdf_bytes(report):
@@ -271,7 +288,9 @@ def pdf_bytes(report):
             )
         )
     headers = (
-        ["#"] + ([] if company else ["Vehicle", "License plate"]) + ["Start", "End", "Energy kWh"]
+        ["#"]
+        + ([] if company else ["Vehicle", "License plate"])
+        + ["Start", "End", "Odometer km", "Energy kWh"]
     )
     headers += (
         ["EUR/kWh", "Amount EUR"]
@@ -283,8 +302,9 @@ def pdf_bytes(report):
         values = [
             str(i),
             *([] if company else [r["Vehicle"], r["License plate"]]),
-            r["Start"].replace("T", " ")[:19],
-            r["End"].replace("T", " ")[:19],
+            display_date(r["Start"]),
+            display_date(r["End"]),
+            r.get("Odometer km", "") or "-",
             fixed(r["Energy kWh"]),
         ]
         values += (
@@ -310,9 +330,9 @@ def pdf_bytes(report):
     )
     rows.append([summary] + [""] * (len(headers) - 1))
     widths = (
-        [24, 111, 111, 65, 65, doc.width - 376]
+        [24, 94, 94, 76, 75, 70, doc.width - 433]
         if company
-        else [26, 115, 78, 118, 118, 70, 55, 55, 85]
+        else [24, 98, 70, 90, 90, 76, 65, 55, 55, doc.width - 623]
     )
     # Fixed widths and wrapped cells keep long vehicle names inside the page.
     table = Table(rows, colWidths=widths, repeatRows=1, hAlign="LEFT")

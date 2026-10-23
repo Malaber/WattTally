@@ -43,6 +43,7 @@ class Collector:
                     c.session_energy_entity for c in chargers if c.session_energy_entity
                 )
                 entities.update(s.charging_entity for s in sources)
+                entities.update(s.odometer_entity for s in sources if s.odometer_entity)
                 if site.grid_entity:
                     entities.add(site.grid_entity)
                 now = datetime.now(UTC)
@@ -84,6 +85,16 @@ class Collector:
                             await db.flush()
                             sources.append(source)
                             entities.add(source.charging_entity)
+                        if source and found.get("odometer_entity"):
+                            source.odometer_entity = found["odometer_entity"]
+                            entities.add(source.odometer_entity)
+                    retained_entities = set(
+                        await db.scalars(
+                            select(Reading.entity_id)
+                            .where(Reading.instance_id == site.id)
+                            .distinct()
+                        )
+                    )
                     # Fetch one day at a time to bound HA responses for long backfills.
                     cursor = start
                     while cursor < now:
@@ -100,7 +111,11 @@ class Collector:
                                 timestamp = stamp(row.get("last_changed") or row["last_updated"])
                                 # Initial snapshots synthesize a time at the query boundary. Keep the
                                 # first baseline only; later overlaps already have the retained state.
-                                if instant(timestamp) == cursor and site.last_sync:
+                                if (
+                                    instant(timestamp) == cursor
+                                    and site.last_sync
+                                    and entity in retained_entities
+                                ):
                                     continue
                                 batch.append(
                                     dict(
