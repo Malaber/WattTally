@@ -173,13 +173,68 @@ def test_company_pdf_across_page_breaks(count):
     assert len(pages) >= (2 if count == 15 else 3)
     text = "\n".join(page.extract_text() for page in pages)
     assert "Wallbox export" in text
-    assert text.count("DEMO AB 123E") == count + 1  # Each row and report heading.
-    assert text.count("Long Range") == count + 1
+    assert text.count("DEMO AB 123E") == 1
+    assert text.count("Long Range") == 1
     assert "completion date" in text
     assert "Round each" not in text and "Whole sessions" not in text
     assert "solar" not in text.lower() and "disclaimer" not in text.lower()
     for index, page in enumerate(pages, 1):
         content = page.extract_text()
         assert report.sha256 in content
-        assert "License plate" in content
+        assert "Energy kWh" in content
+        assert "Amount EUR" in content
+        assert float(page.mediabox.width) == pytest.approx(595.276, abs=0.01)
+        assert float(page.mediabox.height) == pytest.approx(841.890, abs=0.01)
         assert str(index) in content
+
+
+def test_company_details_are_frozen_in_canonical_csv():
+    v, s, t = sample()
+    v.vehicle_model = "Example E20"
+    v.driver_name = "Alex Example"
+    v.driver_address = "Example Street 12\n12345 Example Town"
+    v.vin = "DISCOVERYVIN"
+    v.report_vin = "REPORTVIN"
+    snapshot, csv_text, digest = freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])
+    frozen = NS(
+        id="details",
+        policy="employer",
+        month="2026-10",
+        snapshot=snapshot,
+        csv_text=csv_text,
+        sha256=digest,
+    )
+    v.driver_name = "Changed Driver"
+    assert freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])[2] != digest
+    text = " ".join(p.extract_text() for p in PdfReader(io.BytesIO(pdf_bytes(frozen))).pages)
+    for value in [
+        "Example E20",
+        "Alex Example",
+        "Example Street 12",
+        "12345 Example Town",
+        "REPORTVIN",
+    ]:
+        assert value in text
+    assert "Changed Driver" not in text and "DISCOVERYVIN" not in text
+    sheet = load_workbook(io.BytesIO(xlsx_bytes(frozen))).active
+    cells = {sheet.cell(1, c).value: sheet.cell(2, c) for c in range(1, sheet.max_column + 1)}
+    assert cells["Driver address"].value == v.driver_address
+    assert cells["VIN"].value == "REPORTVIN"
+    assert cells["Driver name"].data_type == "s"
+
+
+def test_company_pdf_accepts_reports_without_new_metadata_columns():
+    import csv
+
+    frozen = report()
+    rows = list(csv.DictReader(io.StringIO(frozen.csv_text)))
+    fields = [
+        k for k in rows[0] if k not in ("Vehicle model", "Driver name", "Driver address", "VIN")
+    ]
+    output = io.StringIO()
+    writer = csv.DictWriter(output, fieldnames=fields, extrasaction="ignore")
+    writer.writeheader()
+    writer.writerows(rows)
+    frozen.csv_text = output.getvalue()
+    text = PdfReader(io.BytesIO(pdf_bytes(frozen))).pages[0].extract_text()
+    assert "NW FS 97E" in text and "Tommy" in text

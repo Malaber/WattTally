@@ -7,7 +7,16 @@ from app.reports import freeze_report, pdf_bytes
 
 
 def example_report(count=70):
-    car = NS(name="Example Company Vehicle - Long Range", plate="DEMO AB 123E", policy="employer")
+    car = NS(
+        name="Company car",
+        vehicle_model="Example Motors E20 Long Range",
+        plate="DEMO AB 123E",
+        policy="employer",
+        driver_name="Alex Example",
+        driver_address="Example Street 12\n12345 Example Town\nGermany",
+        vin="DEMO0000000000001",
+        report_vin="",
+    )
     tariff = NS(effective_from="2026-01-01T00:00:00+00:00", reimbursement_rate="0.30")
     sessions = []
     for index in range(count):

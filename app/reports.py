@@ -17,6 +17,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 from app.accounting import instant, rate_at
 
 BASE_COLUMNS = ["Session", "Period", "Vehicle", "License plate", "Start", "End", "Energy kWh"]
+DETAIL_COLUMNS = ["Vehicle model", "Driver name", "Driver address", "VIN"]
 EMPLOYER_COLUMNS = ["Rate EUR/kWh", "Amount EUR"]
 ACTUAL_COLUMNS = ["Grid kWh", "Solar kWh", "Grid cost EUR", "Solar cost EUR", "Amount EUR", "Notes"]
 BLOCKING_FLAGS = {
@@ -64,6 +65,16 @@ def freeze_report(vehicle, sessions, month, timezone, tariffs):
             "Energy kWh": p["energy_kwh"],
         }
         if vehicle.policy == "employer":
+            row.update(
+                {
+                    "Vehicle model": safe_text(getattr(vehicle, "vehicle_model", "")),
+                    "Driver name": safe_text(getattr(vehicle, "driver_name", "")),
+                    "Driver address": safe_text(getattr(vehicle, "driver_address", "")),
+                    "VIN": safe_text(
+                        getattr(vehicle, "report_vin", "") or getattr(vehicle, "vin", "")
+                    ),
+                }
+            )
             tariff = rate_at(tariffs, instant(session.start))
             if tariff is None:
                 raise ValueError("Add a reimbursement rate covering this session.")
@@ -119,7 +130,9 @@ def freeze_report(vehicle, sessions, month, timezone, tariffs):
         raise ValueError(
             "No confirmed charges for this vehicle and month. In Sessions, check the car and kWh, then choose Confirm charge."
         )
-    columns = BASE_COLUMNS + (EMPLOYER_COLUMNS if vehicle.policy == "employer" else ACTUAL_COLUMNS)
+    columns = BASE_COLUMNS + (
+        EMPLOYER_COLUMNS + DETAIL_COLUMNS if vehicle.policy == "employer" else ACTUAL_COLUMNS
+    )
     out = io.StringIO(newline="")
     writer = csv.DictWriter(out, fieldnames=columns)
     writer.writeheader()
@@ -164,7 +177,11 @@ def xlsx_bytes(report):
     ws.auto_filter.ref = ws.dimensions
     for row in ws.iter_rows(min_row=2, min_col=7):
         for cell in row:
-            if ws.cell(1, cell.column).value == "Notes":
+            if ws.cell(1, cell.column).value not in {
+                "Energy kWh",
+                *EMPLOYER_COLUMNS,
+                *ACTUAL_COLUMNS[:-1],
+            }:
                 continue
             cell.value = float(Decimal(cell.value))
             cell.number_format = "0.000" if "kWh" in ws.cell(1, cell.column).value else "0.00"
@@ -185,20 +202,77 @@ def xlsx_bytes(report):
 
 def pdf_bytes(report):
     stream = io.BytesIO()
+    company = report.policy == "employer"
+    page_size = A4 if company else landscape(A4)
+    margin = 36 if company else 28
     doc = SimpleDocTemplate(
-        stream, pagesize=landscape(A4), rightMargin=28, leftMargin=28, topMargin=28, bottomMargin=38
+        stream,
+        pagesize=page_size,
+        rightMargin=margin,
+        leftMargin=margin,
+        topMargin=36,
+        bottomMargin=52,
     )
     styles = getSampleStyleSheet()
     title = "Wallbox export" if report.policy == "employer" else "Charging costs"
-    story = [
-        Paragraph(title, styles["Title"]),
-        Paragraph(
-            escape(f"{report.snapshot['vehicle']} · {report.snapshot['plate']} · {report.month}"),
-            styles["Heading2"],
-        ),
-    ]
     source = list(csv.DictReader(io.StringIO(report.csv_text)))
-    headers = ["#", "Vehicle", "License plate", "Start", "End", "Energy kWh"]
+    story = [
+        Paragraph(
+            title,
+            ParagraphStyle(
+                "ReportTitle",
+                parent=styles["Title"],
+                alignment=0,
+                fontSize=24,
+                leading=30,
+                textColor=colors.HexColor("#443326"),
+            ),
+        )
+    ]
+    if company:
+        story.append(Paragraph(escape(f"Reporting period: {report.month}"), styles["Heading2"]))
+        first = source[0] if source else {}
+        detail_style = ParagraphStyle("Detail", fontSize=9, leading=13)
+
+        def cell(value):
+            return Paragraph(escape(str(value or "—")).replace("\n", "<br/>"), detail_style)
+
+        detail_rows = [
+            [cell(label), cell(first.get(key, fallback))]
+            for label, key, fallback in [
+                ("Vehicle", "Vehicle", report.snapshot.get("vehicle", "")),
+                ("Vehicle model", "Vehicle model", ""),
+                ("License plate", "License plate", report.snapshot.get("plate", "")),
+                ("VIN", "VIN", ""),
+                ("Driver", "Driver name", ""),
+                ("Driver address", "Driver address", ""),
+            ]
+        ]
+        details = Table(detail_rows, colWidths=[112, doc.width - 112], hAlign="LEFT")
+        details.setStyle(
+            TableStyle(
+                [
+                    ("BACKGROUND", (0, 0), (0, -1), colors.HexColor("#f4eee8")),
+                    ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                    ("LINEBELOW", (0, 0), (-1, -1), 0.35, colors.HexColor("#ded4cb")),
+                    ("TOPPADDING", (0, 0), (-1, -1), 7),
+                    ("BOTTOMPADDING", (0, 0), (-1, -1), 7),
+                ]
+            )
+        )
+        story.extend([Spacer(1, 10), details, Spacer(1, 12)])
+    else:
+        story.append(
+            Paragraph(
+                escape(
+                    f"{report.snapshot['vehicle']} · {report.snapshot['plate']} · {report.month}"
+                ),
+                styles["Heading2"],
+            )
+        )
+    headers = (
+        ["#"] + ([] if company else ["Vehicle", "License plate"]) + ["Start", "End", "Energy kWh"]
+    )
     headers += (
         ["EUR/kWh", "Amount EUR"]
         if report.policy == "employer"
@@ -208,8 +282,7 @@ def pdf_bytes(report):
     for i, r in enumerate(source, 1):
         values = [
             str(i),
-            r["Vehicle"],
-            r["License plate"],
+            *([] if company else [r["Vehicle"], r["License plate"]]),
             r["Start"].replace("T", " ")[:19],
             r["End"].replace("T", " ")[:19],
             fixed(r["Energy kWh"]),
@@ -236,8 +309,11 @@ def pdf_bytes(report):
         ParagraphStyle("Summary", parent=cell_style, fontSize=10, leading=15),
     )
     rows.append([summary] + [""] * (len(headers) - 1))
-    widths = [26, 115, 78, 118, 118, 70]
-    widths += [85, 110] if report.policy == "employer" else [55, 55, 85]
+    widths = (
+        [24, 111, 111, 65, 65, doc.width - 376]
+        if company
+        else [26, 115, 78, 118, 118, 70, 55, 55, 85]
+    )
     # Fixed widths and wrapped cells keep long vehicle names inside the page.
     table = Table(rows, colWidths=widths, repeatRows=1, hAlign="LEFT")
     table.setStyle(
@@ -275,7 +351,7 @@ def pdf_bytes(report):
         canvas.setFont("Helvetica", 7)
         canvas.drawString(28, 25, f"WattTally · {report.id}")
         canvas.drawString(28, 15, f"CSV SHA256 {report.sha256}")
-        canvas.drawRightString(812, 20, str(document.page))
+        canvas.drawRightString(page_size[0] - margin, 20, str(document.page))
 
     doc.build(story, onFirstPage=footer, onLaterPages=footer)
     return stream.getvalue()
