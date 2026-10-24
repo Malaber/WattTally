@@ -238,3 +238,32 @@ def test_company_pdf_accepts_reports_without_new_metadata_columns():
     frozen.csv_text = output.getvalue()
     text = PdfReader(io.BytesIO(pdf_bytes(frozen))).pages[0].extract_text()
     assert "NW FS 97E" in text and "Tommy" in text
+
+
+def test_mileage_export_uses_assigned_car_and_german_dates():
+    import csv
+
+    v, s, t = sample()
+    s.vehicle_id = "car-b"
+    s.payload["odometers"] = {"car-a": {"km": "1000"}, "car-b": {"km": "23456"}}
+    snapshot, text, digest = freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])
+    row = next(csv.DictReader(io.StringIO(text)))
+    assert row["Start"] == "01.10.26 12:00"
+    assert row["Odometer km"] == "23456"
+    frozen = NS(
+        id="mileage",
+        policy="employer",
+        month="2026-10",
+        snapshot=snapshot,
+        csv_text=text,
+        sha256=digest,
+    )
+    pdf = PdfReader(io.BytesIO(pdf_bytes(frozen))).pages[0].extract_text()
+    assert "23456" in pdf and "01.10.26 12:00" in pdf
+    sheet = load_workbook(io.BytesIO(xlsx_bytes(frozen))).active
+    assert sheet.cell(2, sheet.max_column).value == 23456
+    s.vehicle_id = "missing"
+    row = next(
+        csv.DictReader(io.StringIO(freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])[1]))
+    )
+    assert row["Odometer km"] == ""

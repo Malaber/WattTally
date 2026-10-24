@@ -288,9 +288,9 @@ td select {
 }
 .vehicle-form {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
-  align-items: end;
+  align-items: start;
   border-bottom: 1px solid var(--border);
   padding-bottom: 20px;
 }
@@ -402,6 +402,11 @@ footer {
 }
 
 .vehicle-form fieldset {
+  grid-column: 1 / -1;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0 20px;
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 12px;
@@ -413,4 +418,40 @@ footer {
 }
 textarea {
   resize: vertical;
+}
+
+.vehicle-form > label {
+  min-width: 0;
+}
+.vehicle-form fieldset small {
+  grid-column: 1 / -1;
+}
+.vehicle-form button {
+  justify-self: start;
+}
+[data-passkey-auth] [role="tablist"] {
+  display: flex;
+  gap: 8px;
+  margin: 24px 0;
+}
+[data-passkey-auth] [role="tab"] {
+  flex: 1;
+  padding: 12px;
+}
+[data-passkey-auth] [role="tab"][aria-selected="true"] {
+  background: var(--brand);
+  color: white;
+}
+[data-passkey-auth] form > button {
+  width: 100%;
+  margin: 8px 0 16px;
+}
+@media (max-width: 700px) {
+  .vehicle-form fieldset {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vehicle-form fieldset label {
+  align-content: start;
 }

@@ -2,6 +2,29 @@
 <section data-passkey-auth data-next-url="{{ next_url }}">
   <p class="error" data-auth-error hidden></p>
   <p class="success" data-auth-success hidden></p>
+  <div role="tablist" aria-label="Account access">
+    <button
+      type="button"
+      class="secondary"
+      data-auth-tab-trigger="signin"
+      id="auth-tab-signin"
+      role="tab"
+      aria-controls="auth-panel-signin"
+      aria-selected="true"
+    >
+      Sign in</button
+    ><button
+      type="button"
+      class="secondary"
+      data-auth-tab-trigger="signup"
+      id="auth-tab-signup"
+      role="tab"
+      aria-controls="auth-panel-signup"
+      aria-selected="false"
+    >
+      Create account
+    </button>
+  </div>
   <div data-auth-panels>
     <div
       data-auth-tab-panel="signin"
@@ -41,28 +64,6 @@
       </form>
     </div>
   </div>
-  <div role="tablist" aria-label="Account access">
-    <button
-      type="button"
-      class="secondary"
-      data-auth-tab-trigger="signin"
-      id="auth-tab-signin"
-      role="tab"
-      aria-controls="auth-panel-signin"
-      aria-selected="true"
-    >
-      Sign in</button
-    ><button
-      type="button"
-      class="secondary"
-      data-auth-tab-trigger="signup"
-      id="auth-tab-signup"
-      role="tab"
-      aria-controls="auth-panel-signup"
-      aria-selected="false"
-    >
-      Create account
-    </button>
-  </div>
+
 </section>
 {% endmacro %}

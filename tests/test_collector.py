@@ -31,16 +31,29 @@ async def test_repeated_import_deduplicates_and_preserves_assignment(tmp_path, m
         ]
 
     async def history(*args):
+        assert "odo" in args[-1]
         return [
             rows("state", [(-60, "idle"), (-50, "charger_charging"), (-10, "idle")]),
             rows("energy", [(-60, 10), (-10, 12)], "kWh"),
             rows("power", [(-60, 3)], "kW"),
             rows("grid", [(-60, 1)], "kW"),
             rows("car", [(-55, "on"), (-5, "off")]),
+            rows("odo", [(-55, 12345), (-5, 12350)], "km"),
         ]
 
     async def states(*args):
-        return []
+        return [
+            {
+                "entity_id": "odo",
+                "state": "12350",
+                "attributes": {
+                    "vin": "VIN123",
+                    "car_id": "car",
+                    "friendly_name": "Odometer",
+                    "unit_of_measurement": "km",
+                },
+            }
+        ]
 
     monkeypatch.setattr("app.collector.HAClient.history", history)
     monkeypatch.setattr("app.collector.HAClient.states", states)
@@ -75,6 +88,7 @@ async def test_repeated_import_deduplicates_and_preserves_assignment(tmp_path, m
         assert len(sessions) == 1
         assert sessions[0].payload["energy_kwh"] == "2"
         assert sessions[0].assignment == "suggested"
+        assert sessions[0].payload["odometers"][car_id]["km"] == "12345"
         sessions[0].assignment = "confirmed"
         sessions[0].vehicle_id = car_id
         await db.commit()

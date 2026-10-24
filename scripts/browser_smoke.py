@@ -11,6 +11,8 @@ import urllib.request
 from playwright.sync_api import sync_playwright
 
 root = Path(__file__).resolve().parents[1]
+output = root / "artifacts"
+output.mkdir(exist_ok=True)
 with tempfile.TemporaryDirectory() as temporary:
     secret = secrets.token_urlsafe(40)
     env = {
@@ -84,6 +86,8 @@ with tempfile.TemporaryDirectory() as temporary:
             page.locator("[data-passkey-add-link-button]").click()
             page.locator("#overview").wait_for(timeout=15000)
             page.locator("#logout").click()
+            page.locator("[data-passkey-login-button]").wait_for()
+            page.screenshot(path=str(output / "login.png"), full_page=True)
             page.locator("[data-passkey-login-button]").click()
             page.locator("#overview").wait_for(timeout=15000)
             seed = """
@@ -118,6 +122,11 @@ asyncio.run(main())
             page.reload()
             page.locator("[data-tab=settings]").click()
             assert page.locator('[data-vehicle="demo-car"] [name=driver_name]').input_value() == "Alex Example"
+            page.screenshot(path=str(output / "settings.png"), full_page=True)
+            page.set_viewport_size({"width": 390, "height": 844})
+            assert page.evaluate("document.documentElement.scrollWidth <= window.innerWidth")
+            page.screenshot(path=str(output / "settings-mobile.png"), full_page=True)
+            page.set_viewport_size({"width": 1440, "height": 1000})
             page.locator("[data-tab=sessions]").click()
             page.locator("[data-assignment=demo-session] button").click()
             page.get_by_text("confirmed", exact=True).wait_for()

@@ -146,3 +146,25 @@ def test_missing_baseline_recovered_from_simultaneous_session_meter():
     assert D(p["energy_kwh"]) == 3
     assert "missing_meter_baseline" not in p["flags"]
     assert "baseline_from_session_meter" in p["flags"]
+
+
+def test_odometer_at_charge_end_keeps_vehicle_identity_and_ignores_future():
+    c, rows, tariffs = fixture()
+    sources = [
+        NS(
+            vehicle_id="a", charging_entity="car-a", charging_values=["on"], odometer_entity="odo-a"
+        ),
+        NS(
+            vehicle_id="b", charging_entity="car-b", charging_values=["on"], odometer_entity="odo-b"
+        ),
+    ]
+    rows += [
+        row("odo-a", "10:00:00", 12345, "km"),
+        row("odo-a", "11:10:00", 12399, "km"),
+        row("odo-b", "10:00:00", 100, "mi"),
+    ]
+    values = build(c, rows, tariffs, sources)[0]["payload"]["odometers"]
+    assert values["a"]["km"] == "12345"
+    assert values["b"]["km"] == "160.934400"
+    rows.append(row("odo-a", "10:59:00", "unavailable", "km"))
+    assert "a" not in build(c, rows, tariffs, sources)[0]["payload"]["odometers"]

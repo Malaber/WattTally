@@ -34,3 +34,20 @@ def test_token_encryption_and_invalid_origins():
     ]:
         with pytest.raises(ValueError):
             validate_url(url)
+
+
+def test_odometer_discovery_excludes_range_and_keeps_two_cars_separate():
+    states = [
+        {
+            "entity_id": f"sensor.car_{vin}_{kind}",
+            "state": "12000",
+            "attributes": {"vin": vin, "car_id": vin, "unit_of_measurement": "km"},
+        }
+        for vin in ("ONE", "TWO")
+        for kind in ("odometer", "range")
+    ]
+    cars = LeapmotorAdapter().discover(states, [])
+    assert {c["vin"]: c["odometer_entity"] for c in cars} == {
+        "ONE": "sensor.car_ONE_odometer",
+        "TWO": "sensor.car_TWO_odometer",
+    }

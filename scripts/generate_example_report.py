@@ -25,11 +25,16 @@ def example_report(count=70):
         sessions.append(
             NS(
                 id=f"demo-{index + 1:03}",
+                vehicle_id="demo-car",
                 start=(end - timedelta(hours=3)).isoformat(),
                 end=end.isoformat(),
                 assignment="confirmed",
                 reviewed_energy_kwh=energy,
-                payload={"energy_kwh": energy, "flags": []},
+                payload={
+                    "energy_kwh": energy,
+                    "flags": [],
+                    "odometers": {"demo-car": {"km": str(12000 + index * 90)}},
+                },
             )
         )
     snapshot, text, digest = freeze_report(car, sessions, "2026-10", "Europe/Berlin", [tariff])
