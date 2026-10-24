@@ -94,13 +94,14 @@ with tempfile.TemporaryDirectory() as temporary:
 import asyncio
 from app.config import Settings
 from app.database import database
-from app.models import Instance,Vehicle,Charger,Session,Tariff
+from app.models import Instance,Vehicle,VehicleSource,Charger,Session,Tariff
 async def main():
  e,dbs=database(Settings().database_url)
  async with dbs() as db:
   site=Instance(id='demo-home',name='Demo home',url='https://example.invalid',token_cipher='not-a-token',enabled=False)
   car=Vehicle(id='demo-car',vin='DEMO-VIN',name='Tommy (demo)',plate='NW FS 97E',policy='employer')
   db.add_all([site,car]);await db.flush()
+  db.add(VehicleSource(id="demo-source",instance_id=site.id,vehicle_id=car.id,charging_entity="sensor.car_charging"))
   charger=Charger(id='demo-charger',instance_id=site.id,name='Carport TopAC',energy_entity='sensor.demo_energy',power_entity='sensor.demo_power',state_entity='sensor.demo_status')
   db.add(charger);await db.flush()
   db.add(Session(id='demo-session',charger_id=charger.id,start='2026-10-03T09:12:15+00:00',end='2026-10-03T15:16:13+00:00',vehicle_id=car.id,assignment='suggested',payload={'energy_kwh':'11.313','grid_kwh':'4.313','solar_kwh':'7','unknown_kwh':'0','grid_cost':'1.2939','solar_cost':'0','flags':['partial_start']}))
@@ -156,8 +157,19 @@ asyncio.run(main())
             }))
             page.route("**/api/instances/demo-home/sync", lambda route: route.fulfill(json={"ok": True}))
             page.locator("[data-tab=settings]").click()
+            page.route("**/api/vehicle-sources/demo-source/odometer", lambda route: route.fulfill(json=[{"id":"sensor.distance", "name":"Total mileage", "state":"12345", "unit":"km"}]) if route.request.method == "GET" else route.fulfill(json={"ok":True}))
+            page.get_by_role("button", name="Map odometer", exact=True).click()
+            odo = page.locator('[data-odometer-form="demo-source"]')
+            odo.locator("select").select_option("sensor.distance")
+            with page.expect_request("**/api/vehicle-sources/demo-source/odometer") as mapping:
+                odo.get_by_role("button", name="Save odometer & sync").click()
+            assert mapping.value.post_data_json == {"entity_id":"sensor.distance"}
+            page.get_by_text("Odometer history read. Create a new report to include available mileage.", exact=True).wait_for()
             page.get_by_role("button", name="Edit mapping", exact=True).click()
             page.locator("#charger-form h3").filter(has_text="Edit charger").wait_for()
+            assert page.locator('[data-charger-row="demo-charger"] #charger-form').is_visible()
+            assert page.locator("#discovery-panel").is_hidden()
+            page.screenshot(path=str(output / "inline-charger.png"), full_page=True)
             assert page.locator("#state-options").input_value() == "sensor.demo_status"
             assert page.locator("#power-options").input_value() == "sensor.demo_power"
             page.locator("#charger-form [name=name]").fill("Corrected wallbox")

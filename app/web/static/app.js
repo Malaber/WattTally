@@ -82,6 +82,8 @@ const chargeReviewed = (s) =>
   s.reviewed_energy_kwh != null &&
   Number(s.reviewed_energy_kwh) === Number(s.payload.energy_kwh);
 function render() {
+  const editor = $("#charger-form");
+  if (editor) $("#discovery-panel").append(editor);
   const charges = state.sessions.filter(
     (s) => !s.end || Number(s.payload.energy_kwh) > 0,
   );
@@ -173,7 +175,15 @@ function render() {
     state.vehicles
       .map(
         (v) =>
-          `<form class="vehicle-form" data-vehicle="${escape(v.id)}"><label>Name<input name="name" value="${escape(v.name)}" required><small>VIN …${escape(v.vin.slice(-6))}</small></label><label>License plate<input name="plate" value="${escape(v.plate)}" required></label><label>Report policy<select name="policy"><option value="actual" ${v.policy === "actual" ? "selected" : ""}>Actual costs + solar</option><option value="employer" ${v.policy === "employer" ? "selected" : ""}>Company reimbursement</option></select></label><fieldset><legend>Report details</legend><label>Vehicle model<input name="vehicle_model" maxlength="160" value="${escape(v.vehicle_model)}"></label><label>Driver name<input name="driver_name" maxlength="160" value="${escape(v.driver_name)}"></label><label>Driver address<textarea name="driver_address" maxlength="500" rows="3">${escape(v.driver_address)}</textarea></label><label>VIN for reports<input name="report_vin" maxlength="40" value="${escape(v.report_vin || v.vin)}"></label><small>These details are saved with each new report. Discovery identity stays unchanged.</small></fieldset><button>Save car</button></form>`,
+          `<form class="vehicle-form" data-vehicle="${escape(v.id)}"><label>Name<input name="name" value="${escape(v.name)}" required><small>VIN …${escape(v.vin.slice(-6))}</small></label><label>License plate<input name="plate" value="${escape(v.plate)}" required></label><label>Report policy<select name="policy"><option value="actual" ${v.policy === "actual" ? "selected" : ""}>Actual costs + solar</option><option value="employer" ${v.policy === "employer" ? "selected" : ""}>Company reimbursement</option></select></label><fieldset><legend>Report details</legend><label>Vehicle model<input name="vehicle_model" maxlength="160" value="${escape(v.vehicle_model)}"></label><label>Driver name<input name="driver_name" maxlength="160" value="${escape(v.driver_name)}"></label><label>Driver address<textarea name="driver_address" maxlength="500" rows="3">${escape(v.driver_address)}</textarea></label><label>VIN for reports<input name="report_vin" maxlength="40" value="${escape(v.report_vin || v.vin)}"></label><small>These details are saved with each new report. Discovery identity stays unchanged.</small></fieldset><button>Save car</button></form>${(
+            state.vehicle_sources || []
+          )
+            .filter((src) => src.vehicle_id === v.id)
+            .map(
+              (src) =>
+                `<div class="odometer-mapping"><h3>Odometer · ${escape(state.instances.find((i) => i.id === src.instance_id)?.name)}</h3><p>${escape(src.odometer_entity || "Not mapped — choose the car’s total mileage sensor.")}</p><button data-odometer="${escape(src.id)}">Map odometer</button><form data-odometer-form="${escape(src.id)}" hidden><label>Total mileage sensor<select name="entity_id"></select></label><p class="muted">Choose total distance driven, not remaining range. Saving rereads available history. Create a new report afterward.</p><button>Save odometer & sync</button></form></div>`,
+            )
+            .join("")}`,
       )
       .join("") ||
     '<p class="empty">Connect Home Assistant to discover Leapmotor vehicles.</p>';
@@ -181,7 +191,7 @@ function render() {
     state.chargers
       .map(
         (c) =>
-          `<div class="item"><strong>${escape(c.name)}</strong><span class="muted">${escape(c.energy_entity)} · ${escape(c.power_entity)}</span><small>Charging state: ${escape(c.state_entity)} · active: ${escape(c.active_values.join(", "))}</small><small>Session counter: ${escape(c.session_energy_entity || "Not mapped")}</small><button data-edit-charger="${escape(c.id)}">Edit mapping</button></div>`,
+          `<div class="item" data-charger-row="${escape(c.id)}"><strong>${escape(c.name)}</strong><span class="muted">${escape(c.energy_entity)} · ${escape(c.power_entity)}</span><small>Charging state: ${escape(c.state_entity)} · active: ${escape(c.active_values.join(", "))}</small><small>Session counter: ${escape(c.session_energy_entity || "Not mapped")}</small><button data-edit-charger="${escape(c.id)}">Edit mapping</button></div>`,
       )
       .join("") ||
     '<p class="empty">Use Discover & map to select a charger.</p>';
@@ -204,7 +214,7 @@ async function discovery(id, charger = null) {
   notice("Reading Home Assistant entities…");
   const result = await api(`/instances/${id}/discover`, "POST", {});
   await load();
-  $("#discovery-panel").hidden = false;
+  $("#discovery-panel").hidden = Boolean(charger);
   $("#discovery-title").textContent =
     "Map " + state.instances.find((i) => i.id === id).name;
   $("#grid-form [name=instance_id]").value = id;
@@ -264,7 +274,13 @@ async function discovery(id, charger = null) {
   notice(
     `Found ${result.vehicles.length} Leapmotor vehicle(s). Select charger and grid sensors below.`,
   );
-  $("#discovery-panel").scrollIntoView({ behavior: "smooth" });
+  if (charger) {
+    const row = [...document.querySelectorAll("[data-charger-row]")].find(
+      (el) => el.dataset.chargerRow === charger.id,
+    );
+    row.append(chargerForm);
+    chargerForm.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  } else $("#discovery-panel").scrollIntoView({ behavior: "smooth" });
 }
 if ($("#overview")) {
   document.querySelectorAll("[data-tab]").forEach((button) =>
@@ -327,6 +343,7 @@ if ($("#overview")) {
   document.addEventListener("submit", async (event) => {
     const form = event.target;
     if (
+      !form.dataset.odometerForm &&
       !form.dataset.vehicle &&
       !form.dataset.assignment &&
       !form.dataset.credentials
@@ -334,6 +351,21 @@ if ($("#overview")) {
       return;
     event.preventDefault();
     try {
+      if (form.dataset.odometerForm) {
+        const src = state.vehicle_sources.find(
+          (s) => s.id === form.dataset.odometerForm,
+        );
+        await api(`/vehicle-sources/${src.id}/odometer`, "PATCH", {
+          entity_id: formData(form).entity_id || null,
+        });
+        notice("Odometer saved. Reading history…");
+        await api(`/instances/${src.instance_id}/sync`, "POST", {});
+        await load();
+        notice(
+          "Odometer history read. Create a new report to include available mileage.",
+        );
+        return;
+      }
       if (form.dataset.credentials) {
         const site = state.instances.find(
           (i) => i.id === form.dataset.credentials,
@@ -365,6 +397,23 @@ if ($("#overview")) {
     const b = event.target.closest("button");
     if (!b) return;
     try {
+      if (b.dataset.odometer) {
+        const src = state.vehicle_sources.find(
+          (s) => s.id === b.dataset.odometer,
+        );
+        const sensors = await api(`/vehicle-sources/${src.id}/odometer`);
+        const form = b.parentElement.querySelector("form");
+        form.querySelector("select").innerHTML = options(
+          sensors.map((s) => ({
+            id: s.id,
+            name: `${s.name} · ${s.state} ${s.unit} · ${s.id}`,
+          })),
+          src.odometer_entity,
+          "No odometer",
+        );
+        form.hidden = false;
+        form.querySelector("select").focus();
+      }
       if (b.dataset.editCharger) {
         const charger = state.chargers.find(
           (c) => c.id === b.dataset.editCharger,
@@ -399,6 +448,9 @@ if ($("#overview")) {
   setInterval(() => {
     if (
       !document.hidden &&
+      !document.querySelector(
+        "[data-charger-row] #charger-form, [data-odometer-form]:not([hidden])",
+      ) &&
       !["INPUT", "SELECT", "TEXTAREA"].includes(document.activeElement?.tagName)
     )
       load().catch((e) => notice(e.message, true));

@@ -225,3 +225,10 @@ exports format local dates as `22.10.26 23:12`. Existing frozen CSV data stays
 unchanged; legacy PDF dates are formatted when rendered. Migration 0007 adds the
 optional odometer entity mapping. Discovery updates existing cars on the next
 sync; older mileage is available only where Home Assistant history exists.
+
+To map mileage manually: **Connections & cars → Cars → Odometer → Map odometer**.
+Choose the car's total-mileage sensor from its Home Assistant (km or mi), then
+**Save odometer & sync**. Range sensors may also use distance units, so choose total
+distance driven. Manual choices survive automatic discovery. Saving rereads the
+configured history window; older missing history stays blank. Generate a new
+report afterward; existing report snapshots stay unchanged.
