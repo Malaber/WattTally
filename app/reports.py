@@ -225,6 +225,8 @@ def pdf_bytes(report):
     doc = SimpleDocTemplate(
         stream,
         pagesize=page_size,
+        title=f"{'Wallbox export' if company else 'Charging costs'} - {report.month}",
+        author="WattTally",
         rightMargin=margin,
         leftMargin=margin,
         topMargin=36,
