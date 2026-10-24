@@ -85,7 +85,7 @@ class Collector:
                             await db.flush()
                             sources.append(source)
                             entities.add(source.charging_entity)
-                        if source and found.get("odometer_entity"):
+                        if source and not source.odometer_manual and found.get("odometer_entity"):
                             source.odometer_entity = found["odometer_entity"]
                             entities.add(source.odometer_entity)
                     retained_entities = set(

@@ -541,3 +541,63 @@ def test_vehicle_report_details_preserve_discovery_identity_and_legacy_edits(cli
     assert (
         client.patch("/api/vehicles/details-car", json=details, headers=headers).status_code == 422
     )
+
+
+def test_explicit_odometer_mapping_validation_and_backfill(client, monkeypatch):
+    from app.models import Vehicle, VehicleSource, Instance
+
+    headers = authorize(client)
+
+    async def seed():
+        async with client.app.state.db() as db:
+            db.add(
+                Instance(
+                    id="home",
+                    name="Home",
+                    url="https://ha.example",
+                    token_cipher="test",
+                    last_sync="2026-10-24T00:00:00Z",
+                )
+            )
+            db.add(Vehicle(id="car", vin="VIN", name="Car", plate="DEMO"))
+            await db.flush()
+            db.add(
+                VehicleSource(
+                    id="src", instance_id="home", vehicle_id="car", charging_entity="sensor.charge"
+                )
+            )
+            await db.commit()
+
+    asyncio.run(seed())
+
+    async def states(self):
+        return [
+            {
+                "entity_id": "sensor.distance",
+                "state": "12345",
+                "attributes": {"unit_of_measurement": "km"},
+            },
+            {
+                "entity_id": "sensor.power",
+                "state": "3000",
+                "attributes": {"unit_of_measurement": "W"},
+            },
+        ]
+
+    monkeypatch.setattr("app.main.HAClient.states", states)
+    monkeypatch.setattr("app.main.TokenVault.open", lambda *args: "test")
+    path = "/api/vehicle-sources/src/odometer"
+    assert [s["id"] for s in client.get(path).json()] == ["sensor.distance"]
+    assert (
+        client.patch(path, json={"entity_id": "sensor.power"}, headers=headers).status_code == 422
+    )
+    saved = client.patch(path, json={"entity_id": "sensor.distance"}, headers=headers)
+    assert saved.status_code == 200, saved.text
+    assert saved.json()["odometer_manual"] is True
+    data = client.get("/api/dashboard").json()
+    assert data["instances"][0]["last_sync"] is None
+    assert data["vehicle_sources"][0]["odometer_entity"] == "sensor.distance"
+    assert (
+        client.patch(path, json={"entity_id": None}, headers=headers).json()["odometer_entity"]
+        is None
+    )

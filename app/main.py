@@ -69,6 +69,10 @@ class MappingInput(BaseModel):
     enabled: bool = True
 
 
+class OdometerInput(BaseModel):
+    entity_id: str | None = Field(default=None, max_length=255)
+
+
 class VehicleInput(BaseModel):
     vehicle_model: str = Field(default="", max_length=160)
     driver_name: str = Field(default="", max_length=160)
@@ -334,6 +338,7 @@ def create_app(settings=None):
             for name, model in [
                 ("instances", Instance),
                 ("vehicles", Vehicle),
+                ("vehicle_sources", VehicleSource),
                 ("chargers", Charger),
                 ("tariffs", Tariff),
                 ("sessions", Session),
@@ -395,6 +400,53 @@ def create_app(settings=None):
             await db.commit()
             return public(instance)
 
+    async def odometer_entities(db, source):
+        site = await require(db, Instance, source.instance_id)
+        try:
+            states = await HAClient(site.url, vault.open(site.token_cipher)).states()
+        except Exception:
+            raise HTTPException(
+                400, "Cannot read odometer sensors. Check Home Assistant connection."
+            ) from None
+        return [
+            s
+            for s in states
+            if s["entity_id"].startswith("sensor.")
+            and s.get("attributes", {}).get("unit_of_measurement") in {"km", "mi"}
+        ]
+
+    @app.get("/api/vehicle-sources/{key}/odometer")
+    async def odometer_options(key: str):
+        async with db_factory() as db:
+            source = await require(db, VehicleSource, key)
+            return [
+                {
+                    "id": s["entity_id"],
+                    "name": s.get("attributes", {}).get("friendly_name", s["entity_id"]),
+                    "state": s["state"],
+                    "unit": s["attributes"]["unit_of_measurement"],
+                }
+                for s in await odometer_entities(db, source)
+            ]
+
+    @app.patch("/api/vehicle-sources/{key}/odometer")
+    async def map_odometer(key: str, data: OdometerInput):
+        async with collector.lock, db_factory() as db:
+            source = await require(db, VehicleSource, key)
+            if data.entity_id and data.entity_id not in {
+                s["entity_id"] for s in await odometer_entities(db, source)
+            }:
+                raise HTTPException(
+                    422, "Choose a distance sensor in km or mi from this Home Assistant."
+                )
+            source.odometer_entity = data.entity_id
+            source.odometer_manual = True
+            site = await require(db, Instance, source.instance_id)
+            site.last_sync = None
+            await collector.rebuild(db, site)
+            await db.commit()
+            return public(source)
+
     @app.post("/api/instances/{key}/discover")
     async def discovery(key: str):
         async with collector.lock, db_factory() as db:
@@ -430,7 +482,7 @@ def create_app(settings=None):
                         )
                     else:
                         source.charging_entity = found["charging_entity"]
-                        if found.get("odometer_entity"):
+                        if not source.odometer_manual and found.get("odometer_entity"):
                             source.odometer_entity = found["odometer_entity"]
                 found["id"] = vehicle.id
             await db.commit()

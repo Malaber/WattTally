@@ -455,3 +455,12 @@ textarea {
 .vehicle-form fieldset label {
   align-content: start;
 }
+
+.odometer-mapping {
+  margin: 20px 0 32px;
+}
+[data-charger-row] #charger-form {
+  margin-top: 20px;
+  border-top: 1px solid var(--border);
+  padding-top: 20px;
+}

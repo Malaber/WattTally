@@ -267,3 +267,9 @@ def test_mileage_export_uses_assigned_car_and_german_dates():
         csv.DictReader(io.StringIO(freeze_report(v, [s], "2026-10", "Europe/Berlin", [t])[1]))
     )
     assert row["Odometer km"] == ""
+
+
+def test_pdf_metadata_has_meaningful_title_and_author():
+    reader = PdfReader(io.BytesIO(pdf_bytes(report())))
+    assert reader.metadata.title == "Wallbox export - 2026-10"
+    assert reader.metadata.author == "WattTally"
